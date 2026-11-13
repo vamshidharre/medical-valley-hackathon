@@ -52,19 +52,19 @@
     r.elements = fresh.elements; r.outcome = v.outcome; r.trace = v.trace;
     r.priority = E.priority(fresh.elements, fresh.seriousness_signal); r.serious = fresh.seriousness_signal;
     r.model = 'offline-reader-1'; r.prompt = 'triage_icsr v1.0';
-    r.liveAI = false; r.confirmed = false; r.finalOutcome = null; r.decidedBy = null; r.decidedAt = null; r.overridden = false;
+    r.liveAI = false; r.readBy = null; r.confirmed = false; r.finalOutcome = null; r.decidedBy = null; r.decidedAt = null; r.overridden = false;
     r.caseAI = false; r.caseFields = null; r.caseModel = null; r.caseReviewed = false; r.caseReviewedBy = null; r.caseReviewedAt = null; r.caseExasolWrite = null;
   });
   A.persistInbox = () => LS.set('inbox', A.inbox);
   A.persistInbox();
   A.triage = function (text, channel, meta = {}) {
-    const hash = E.sha256(text + (meta.report_id ? ':' + meta.report_id : ''));
-    const dup = A.inbox.find(r => (meta.report_id && (r.id === meta.report_id || (r.meta && r.meta.report_id === meta.report_id))) || (!meta.report_id && r.hash === hash));
+    const hash = E.sha256(text);
+    const dup = A.inbox.find(r => r.hash === hash);
     if (dup) return { duplicate: true, record: dup };
     const read = E.readSource(text), v = E.evaluateValidity(read.elements);
-    const rec = { id: meta.report_id || ('src_' + hash.slice(0, 10)), hash, channel, text, ts: new Date().toISOString(), meta, elements: read.elements, outcome: v.outcome, trace: v.trace,
+    const rec = { id: 'src_' + hash.slice(0, 10), hash, channel, text, ts: new Date().toISOString(), meta, elements: read.elements, outcome: v.outcome, trace: v.trace,
       priority: E.priority(read.elements, read.seriousness_signal), serious: read.seriousness_signal, model: 'offline-reader-1', prompt: 'triage_icsr v1.0', products: read.products, ae: read.ae_candidates, sample: !!meta.sample,
-      liveAI: false, confirmed: false, finalOutcome: null, caseAI: false, caseFields: null, caseModel: null, caseReviewed: false, caseReviewedBy: null, caseReviewedAt: null, caseExasolWrite: null };
+      liveAI: false, readBy: null, confirmed: false, finalOutcome: null, caseAI: false, caseFields: null, caseModel: null, caseReviewed: false, caseReviewedBy: null, caseReviewedAt: null, caseExasolWrite: null };
     A.inbox.unshift(rec);
     A.auditAdd('ai_triage_proposal', 'system', { source_record_id: rec.id, model_id: rec.model, prompt_version: rec.prompt, criteria: v.trace.inputs, content_sha256: hash }, false);
     A.auditAdd('rule_evaluation', 'system', { source_record_id: rec.id, rule_id: v.trace.rule_id, rule_set_version: v.trace.rule_set_version, fired: v.trace.fired_rules, outcome: v.outcome }, false);
@@ -129,9 +129,17 @@
   ];
   A.CHANNELS = ['web_form', 'email', 'phone_call', 'literature_pubmed', 'safereport_ai'];
   A.CHANNEL_LABEL = { web_form: 'Web form', email: 'Email', phone_call: 'Phone call', literature_pubmed: 'Literature (PubMed)', safereport_ai: 'SafeReport AI' };
-  A.CHANNEL_COLOR = { web_form: 'var(--blue)', email: 'var(--violet)', phone_call: 'var(--teal)', literature_pubmed: 'var(--warn)', safereport_ai: 'var(--ok)' };
+  A.preview = t => { const g = k => (t.match(new RegExp('^\\s*' + k + ':\\s*(.+)$', 'mi')) || [])[1];
+    const prod = g('Suspect product'), ev = g('Adverse event');
+    if (prod && ev) return prod.trim() + ' · ' + ev.trim();
+    return t.split('\n').filter(l => !/automated extraction|^\s*source channel:|^\s*extraction confidence:/i.test(l)).join(' ').replace(/\s+/g, ' ').trim(); };
+  A.techDetails = msg => msg ? `<details class="tech"><summary>Details for IT</summary><code>${A.esc(msg)}</code></details>` : '';
+  A.aiError = (what, msg) => /api[_ ]?key|not set|501/i.test(msg || '')
+    ? `<b>AI reading isn't connected,</b> so Claude can't read this ${what} yet. Ask your administrator to connect the AI service.${A.techDetails(msg)}`
+    : `<b>Claude couldn't read this ${what}.</b> Try again in a moment.${A.techDetails(msg)}`;
+  A.CHANNEL_COLOR = { web_form: 'var(--blue)', email: 'var(--slate)', phone_call: 'var(--teal)', literature_pubmed: 'var(--warn)', safereport_ai: 'var(--ok)' };
   A.chanLabel = c => A.CHANNEL_LABEL[c] || A.human(c);
-  A.chanIcon = c => ({ web_form: 'globe', email: 'mail', phone_call: 'phone', literature_pubmed: 'book', safereport_ai: 'bot' }[c] || 'file');
+  A.chanIcon = c => ({ web_form: 'globe', email: 'mail', phone_call: 'phone', literature_pubmed: 'book', safereport_ai: 'botai' }[c] || 'file');
   A.chanColor = c => A.CHANNEL_COLOR[c] || 'var(--blue)';
   // Idempotent: A.triage() already skips anything whose content hash is already in
   // the inbox, so this just backfills whichever samples are missing — including
@@ -184,7 +192,7 @@
 
   /* ---------- helpers ---------- */
   A.fmtDate = s => { try { return new Date(s).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }); } catch (e) { return s; } };
-  A.human = s => String(s || '').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
+  A.human = s => String(s || '').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()).replace(/\bai\b/gi, 'AI');
   A.short = (h, n = 8) => h ? h.slice(0, n) + '…' + h.slice(-4) : '—';
   A.OUT_LABEL = { valid_icsr: 'Valid ICSR', potential_icsr: 'Potential ICSR · escalated', non_icsr: 'Not an ICSR' };
   A.outBadge = o => o ? `<span class="badge ${o === 'valid_icsr' ? 'b-ok' : o === 'potential_icsr' ? 'b-warn' : 'b-mut'}">${A.OUT_LABEL[o]}</span>` : '<span class="badge b-info">Pending</span>';
@@ -192,8 +200,8 @@
      reflects that: nothing analysed yet, analysed but awaiting confirmation, or
      confirmed (counted). */
   A.statusBadge = r => r.confirmed ? A.outBadge(r.finalOutcome) : r.liveAI ? '<span class="badge b-info">Awaiting confirmation</span>' : '<span class="badge b-mut">Not yet analysed</span>';
-  A.catBadge = c => `<span class="badge" style="background:${C.CAT[c]};color:${c === 'Possible' ? '#4A3200' : '#fff'}">${c}</span>`;
-  A.recBadge = id => ({ 'REC-02': '<span class="badge b-ok">Validated</span>', 'REC-03': '<span class="badge b-bad">Not confirmed</span>', 'REC-01': '<span class="badge b-mut">Insufficient info</span>', 'REC-04': '<span class="badge b-warn">Inconclusive</span>' }[id] || '');
+  A.catBadge = c => `<span class="badge ${{ Certain: 'b-bad', Probable: 'b-bad', Possible: 'b-warn', Unassessable: 'b-warn' }[c] || 'b-mut'}">${c}</span>`; // soft fill + dark text keeps AAA
+  A.recBadge = id => ({ 'REC-02': '<span class="badge b-bad">Validated</span>', 'REC-03': '<span class="badge b-mut">Not confirmed</span>', 'REC-01': '<span class="badge b-warn">Insufficient info</span>', 'REC-04': '<span class="badge b-warn">Inconclusive</span>' }[id] || '');
   A.toast = msg => { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); };
   /* Real, live call to the Claude API — the one genuine model call in this build.
      Goes to this server's own /api/extract (server.py), which holds the API key
@@ -249,11 +257,18 @@
     pulse: '<path d="M3 12h4l2.5-6 4 12 2.5-6H21"/>', chat: '<path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"/>', shield: '<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>', link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1"/>',
     bell: '<path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7z"/><path d="M10 20a2 2 0 0 0 4 0"/>', search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>', arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>', check: '<path d="m5 12 5 5 9-10"/>', file: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>', users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>', alert: '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17.5v.5"/>', flask: '<path d="M9 3h6M10 3v6l-5.5 9.5A1.5 1.5 0 0 0 5.8 21h12.4a1.5 1.5 0 0 0 1.3-2.5L14 9V3"/>', clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', out: '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
     mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/>', phone: '<path d="M5 4h4l2 5-2.5 2a11 11 0 0 0 5.5 5.5l2-2.5 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 7a2 2 0 0 1 2-3z"/>',
+    // dashboard card icons: 24px grid, 2px outline, round caps and joins (design-guidelines §6)
+    trend: '<path d="M3 17l5.5-5.5 4 4L20 8"/><path d="M15 8h5v5"/>', funnel: '<path d="M4 5h16l-6 7.5V18l-4 2v-7.5z"/>',
+    pie: '<path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15.5 3.7A9 9 0 0 1 20.3 8.5H15.5z"/>', listcheck: '<path d="m4 7 2 2 3.5-3.5M4 16.5l2 2 3.5-3.5M13 8h7M13 17.5h7"/>',
+    scatter: '<path d="M4 4v16h16"/><circle cx="9" cy="14.5" r="1.6"/><circle cx="13" cy="10.5" r="1.6"/><circle cx="17.5" cy="7" r="1.6"/>', eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+    botai: '<rect x="3" y="10" width="15" height="11" rx="3"/><path d="M10.5 10V6.5M8 6.5h5"/><circle cx="8" cy="15.5" r="1.3"/><circle cx="13" cy="15.5" r="1.3"/><path d="M18.5 1.5 19.6 4.4 22.5 5.5 19.6 6.6 18.5 9.5 17.4 6.6 14.5 5.5 17.4 4.4z" style="stroke:var(--knock,var(--card));stroke-width:4.5;fill:var(--knock,var(--card))"/><path d="M18.5 1.5 19.6 4.4 22.5 5.5 19.6 6.6 18.5 9.5 17.4 6.6 14.5 5.5 17.4 4.4z" style="fill:currentColor;stroke:none"/>',
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>', bot: '<rect x="4" y="9" width="16" height="11" rx="3"/><path d="M12 9V5M9 5h6"/><circle cx="9" cy="14.5" r="1.4"/><circle cx="15" cy="14.5" r="1.4"/><path d="M3 13h1M20 13h1"/>'
   };
   A.ico = (n, extra = '') => `<svg viewBox="0 0 24 24" ${extra} aria-hidden="true">${A.I[n]}</svg>`;
-  A.cross = (s = 200) => `<svg class="cross" width="${s}" height="${s}" viewBox="0 0 200 200" aria-hidden="true"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#DDE6F5"/></linearGradient><linearGradient id="cs" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C6D2E8"/><stop offset="1" stop-color="#A9B9D6"/></linearGradient></defs><g transform="rotate(-8 100 100)"><path d="M78 24h44a8 8 0 0 1 8 8v38h38a8 8 0 0 1 8 8v44a8 8 0 0 1-8 8h-38v38a8 8 0 0 1-8 8H78a8 8 0 0 1-8-8v-38H32a8 8 0 0 1-8-8V78a8 8 0 0 1 8-8h38V32a8 8 0 0 1 8-8z" transform="translate(10 10)" fill="url(#cs)"/><path d="M78 24h44a8 8 0 0 1 8 8v38h38a8 8 0 0 1 8 8v44a8 8 0 0 1-8 8h-38v38a8 8 0 0 1-8 8H78a8 8 0 0 1-8-8v-38H32a8 8 0 0 1-8-8V78a8 8 0 0 1 8-8h38V32a8 8 0 0 1 8-8z" fill="url(#cg)"/></g></svg>`;
-  A.logo = () => `<svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#1E7BFF"/><path d="M16 9h8a2 2 0 0 1 2 2v5h5a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-5v5a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-5H9a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h5v-5a2 2 0 0 1 2-2z" fill="#fff"/></svg>`;
+  // Medicine capsule (design-guidelines/capsule-logo.svg): product logo and hero art. Keeps the .cross class so layout is unchanged.
+  const CAPSULE = '<g transform="rotate(-40 32 32)"><path d="M32 19H19a13 13 0 000 26h13z" fill="#ffffff" stroke="#9fd3b1" stroke-width="2"/><circle cx="17" cy="28" r="2.4" fill="#cfeadb"/><circle cx="24.5" cy="34" r="2.8" fill="#bfe3cd"/><circle cx="17.5" cy="38.5" r="2.2" fill="#cfeadb"/><circle cx="26" cy="26.5" r="2.1" fill="#e2f3e8"/><path d="M32 19h13a13 13 0 010 26H32z" fill="#2c7a49"/><path d="M34 22h9a9 9 0 013.5 1.5" stroke="#7fcf98" stroke-width="2.5" stroke-linecap="round" fill="none"/></g>';
+  A.cross = (s = 200) => `<svg class="cross" width="${s}" height="${s}" viewBox="0 0 64 64" aria-hidden="true">${CAPSULE}</svg>`;
+  A.logo = () => `<svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true">${CAPSULE}</svg>`;
 
   /* ---------- shell + router ---------- */
   const NAV = [
@@ -261,7 +276,7 @@
     ['Reports', [['#/literature', 'book', 'Literature monitoring'], ['#/inbox', 'inbox', 'Triage inbox', 'inbox'], ['#/workbench', 'bench', 'Case workbench']]],
     ['MedDRA coding', [['#/meddra', 'flask', 'MedDRA coding']]],
     ['Signals', [['#/signals', 'pulse', 'Signal detection', 'sig'], ['#/ask', 'chat', 'Ask the evidence']]],
-    ['Trust', [['#/audit', 'link', 'Audit trail'], ['#/trust', 'shield', 'How decisions are made']]]
+    ['Trust', [['#/audit', 'link', 'Audit trail']]]
   ];
   A.user = LS.get('user', null);
   if (!A.user && /[?&]demo=1/.test(location.search)) A.user = { name: 'Dr. Chloe F.', role: 'Safety physician' }; // shareable demo link skips sign-in
@@ -277,7 +292,7 @@
     const parts = parse().parts, on = activeNav(parts), awaiting = A.inbox.filter(r => r.outcome === 'potential_icsr').length;
     const nav = NAV.map(([g, items]) => `<div class="grp">${g}</div>` + items.map(([h, ic, lb, k]) => `<a href="${h}" class="${h === on || (h === '#/' && on === '#/') ? 'on' : ''}"><svg viewBox="0 0 24 24" aria-hidden="true">${A.I[ic]}</svg><span>${lb}</span>${k === 'inbox' && awaiting ? `<b class="cnt">${awaiting}</b>` : ''}${k === 'sig' ? `<b class="cnt">${A.flagged.length}</b>` : ''}</a>`).join('')).join('');
     return `<div class="app"><aside class="side"><a class="brand" href="#/" style="text-decoration:none;color:inherit">${A.logo()}Atheria<small>PV</small></a><nav class="nav" aria-label="Main">${nav}</nav>
-      <div class="me"><div class="av">${esc((A.user.name || 'U')[0])}</div><div style="min-width:0"><b>${esc(A.user.name)}</b><span>${esc(A.user.role)}</span></div><button class="iconbtn" style="width:34px;height:34px;margin-left:auto;box-shadow:none" title="Sign out" id="signout"><svg viewBox="0 0 24 24">${A.I.out}</svg></button></div></aside>
+      <div class="me"><div class="av">${esc((A.user.name || 'U')[0])}</div><div style="min-width:0"><b>${esc(A.user.name)}</b><span>${esc(A.user.role)}</span></div><button class="iconbtn" style="width:44px;height:44px;margin-left:auto;box-shadow:none" title="Sign out" id="signout"><svg viewBox="0 0 24 24">${A.I.out}</svg></button></div></aside>
       <main class="main" id="main">${crumbs ? `<div class="crumbs">${crumbs}</div>` : ''}<header class="top"><div><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div><div class="acts">${acts}
       <button class="iconbtn" id="themebtn" title="Toggle dark mode" aria-label="Toggle dark mode"><svg viewBox="0 0 24 24">${A.I.moon}</svg></button>
       <a class="iconbtn" href="#/inbox" title="${awaiting} escalated records awaiting review" aria-label="Notifications"><svg viewBox="0 0 24 24">${A.I.bell}</svg></a></div></header>${body}</main></div>`;
@@ -308,33 +323,5 @@
   A.render = render;
   window.addEventListener('hashchange', render);
   C.tipInit();
-  /* ---------- signal statistics from Exasol (when served by safereport/server.py) ---------- */
-  A.signalSource = { db: 'browser' };
-  A.loadDbSignals = async function () {
-    try {
-      const ctl = new AbortController(); setTimeout(() => ctl.abort(), 4000);
-      const res = await fetch('/api/pv/signals', { signal: ctl.signal });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || 'HTTP ' + res.status);
-      const j = await res.json(), browser = A.pairMap;
-      const keys = ['a', 'b', 'c', 'd', 'prr', 'ror', 'ror_lo', 'ror_hi', 'chi2'];
-      const agree = j.rows.filter(r => { const p = browser.get(r.signal_id); return p && p.is_signal === r.is_signal && keys.every(k => Math.abs(p[k] - r[k]) < 1e-3); }).length;
-      A.pairs = j.rows.slice().sort((x, y) => y.prr - x.prr || (x.signal_id < y.signal_id ? -1 : 1));
-      A.pairMap = new Map(A.pairs.map(p => [p.signal_id, p]));
-      A.flagged = A.pairs.filter(p => p.is_signal);
-      A.signalSource = { db: 'exasol', query: j.query, viewSql: j.view_sql, reports: j.reports, agree, total: j.rows.length, browserTotal: browser.size };
-    } catch (e) { A.signalSource = { db: 'browser', error: String(e.message || e) }; }
-  };
-  A.loadDbReports = async function () {
-    try {
-      const res = await fetch('/api/pv/reports?source=safereport');
-      if (!res.ok) return;
-      const j = await res.json();
-      for (const r of (j.reports || []).slice().reverse()) {
-        if (r.narrative && !A.inbox.some(x => x.id === r.report_id || (x.meta && x.meta.report_id === r.report_id))) {
-          A.triage(r.narrative, 'safereport', { report_id: r.report_id, drug: r.drug, event: r.event_term, live_db: true });
-        }
-      }
-    } catch (e) { /* ignore */ }
-  };
-  A.start = async () => { if (!location.hash) location.hash = '#/'; await A.loadDbSignals(); await A.loadDbReports(); render(); };
+  A.start = () => { if (!location.hash) location.hash = '#/'; render(); };
 })(window);

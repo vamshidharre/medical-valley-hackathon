@@ -3,7 +3,7 @@
   'use strict';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const f = (n, d = 0) => Number(n).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d });
-  const CAT = { Certain: 'var(--c-cert)', Probable: 'var(--c-prob)', Possible: 'var(--c-poss)', Unlikely: 'var(--c-unl)', Unassessable: 'var(--c-una)' };
+  const CAT = { Certain: 'var(--c-cert)', Probable: 'var(--c-prob)', Possible: 'var(--c-poss)', Unlikely: 'var(--c-unl)', Unassessable: 'var(--c-unas)' };
   const OUT = { valid_icsr: 'var(--ok)', potential_icsr: 'var(--warn)', non_icsr: 'var(--c-una)' };
   const tip = t => `data-tip="${esc(t)}"`;
   const fill = c => `style="fill:${c}"`;
@@ -29,8 +29,8 @@
   function hbars(rows, o = {}) {
     const max = o.max || Math.max(1, ...rows.map(r => r.value));
     return `<div class="list" style="gap:12px">${rows.map(r => `<div ${tip(r.tip || r.label + ': ' + r.value)}>
-      <div class="row" style="justify-content:space-between;margin-bottom:5px"><span style="font-weight:550;font-size:13.5px">${esc(r.label)}</span><span class="mono" style="color:var(--mut)">${esc(r.text != null ? r.text : r.value)}</span></div>
-      <div class="bar"><i style="width:${Math.max(r.value ? 2 : 0, r.value / max * 100)}%;background:${r.color || 'var(--blue)'}"></i></div>${r.sub ? `<div style="font-size:12px;color:var(--mut);margin-top:3px">${esc(r.sub)}</div>` : ''}</div>`).join('')}</div>`;
+      <div class="row" style="justify-content:space-between;margin-bottom:5px"><span style="font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px">${r.icon || ''}${esc(r.label)}</span><span class="mono" style="color:var(--mut)">${esc(r.text != null ? r.text : r.value)}</span></div>
+      <div class="bar${o.track ? ' ' + o.track : ''}"><i style="width:${Math.max(r.value ? 2 : 0, r.value / max * 100)}%;background:${r.color || 'var(--slate)'}"></i></div>${r.sub ? `<div style="font-size:12px;color:var(--mut);margin-top:3px">${esc(r.sub)}</div>` : ''}</div>`).join('')}</div>`;
   }
   function stack(parts, o = {}) {
     const tot = parts.reduce((a, p) => a + p.value, 0) || 1;
@@ -45,7 +45,7 @@
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" class="spark" aria-hidden="true"><path d="${d}L${w},${h}L0,${h}Z" style="fill:${c};opacity:.12"/><path d="${d}" fill="none" style="stroke:${c}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   }
   function line(series, labels, o = {}) {
-    const W = 640, H = o.h || 220, L = 38, B = 28, T = 10, R = 10, n = labels.length;
+    const W = o.w || 640, H = o.h || 220, L = 38, B = 28, T = 10, R = 10, n = labels.length;
     const mx = Math.max(1, ...series.flatMap(s => s.values)); const nice = Math.ceil(mx / 4) * 4 || 4;
     const X = i => L + i / Math.max(1, n - 1) * (W - L - R), Y = v => T + (1 - v / nice) * (H - T - B);
     let g = '';
@@ -61,24 +61,24 @@
   }
   const lg = v => Math.log10(Math.max(v, 1e-6));
   function bubble(sigs, o = {}) { // x = cases, y = PRR (log/log) with Evans region shaded
-    const W = 680, H = 360, L = 52, B = 40, T = 14, R = 16;
+    const W = o.w || 680, H = o.h || 360, L = 52, B = 40, T = 14, R = 16;
     const xs = [1, 2, 3, 5, 10, 20, 30, 50], ys = [.5, 1, 2, 5, 10, 20, 40];
     const x0 = lg(1), x1 = lg(60), y0 = lg(.4), y1 = lg(60);
     const X = v => L + (lg(v) - x0) / (x1 - x0) * (W - L - R), Y = v => T + (1 - (lg(v) - y0) / (y1 - y0)) * (H - T - B);
-    let g = `<rect x="${X(3)}" y="${Y(60)}" width="${W - R - X(3)}" height="${Y(2) - Y(60)}" style="fill:var(--blue);opacity:.07" rx="10"/>`;
+    let g = `<rect x="${X(3)}" y="${Y(60)}" width="${W - R - X(3)}" height="${Y(2) - Y(60)}" style="fill:var(--bad);opacity:.06" rx="10"/>`;
     xs.forEach(v => g += `<line x1="${X(v)}" x2="${X(v)}" y1="${T}" y2="${H - B}" class="axl"/><text x="${X(v)}" y="${H - B + 18}" text-anchor="middle" class="ax">${v}</text>`);
     ys.forEach(v => g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" class="axl"/><text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end" class="ax">${v}</text>`);
-    g += `<line x1="${L}" x2="${W - R}" y1="${Y(2)}" y2="${Y(2)}" style="stroke:var(--blue)" stroke-dasharray="5 4" stroke-width="1.6"/><line x1="${X(3)}" x2="${X(3)}" y1="${T}" y2="${H - B}" style="stroke:var(--blue)" stroke-dasharray="5 4" stroke-width="1.6"/>`;
-    g += `<text x="${W - R - 6}" y="${T + 16}" text-anchor="end" style="font-size:12px;font-weight:650;fill:var(--blue)">Evans signal zone · PRR ≥ 2, cases ≥ 3, χ² ≥ 4</text>`;
+    g += `<line x1="${L}" x2="${W - R}" y1="${Y(2)}" y2="${Y(2)}" style="stroke:var(--bad)" stroke-dasharray="5 4" stroke-width="1.6"/><line x1="${X(3)}" x2="${X(3)}" y1="${T}" y2="${H - B}" style="stroke:var(--bad)" stroke-dasharray="5 4" stroke-width="1.6"/>`;
+    g += `<text x="${W - R - 6}" y="${Y(2) - 8}" text-anchor="end" style="font-size:12px;font-weight:700;fill:var(--bad-ink);paint-order:stroke;stroke:var(--card);stroke-width:4px;stroke-linejoin:round">Evans signal zone · PRR ≥ 2, cases ≥ 3, χ² ≥ 4</text>`;
     g += `<text x="${(L + W) / 2}" y="${H - 4}" text-anchor="middle" class="ax">Number of cases (log scale)</text><text transform="translate(12 ${H / 2}) rotate(-90)" text-anchor="middle" class="ax">PRR (log scale)</text>`;
     sigs.slice().sort((a, b) => b.chi2 - a.chi2).forEach(s => {
-      const r = Math.max(5, Math.min(26, Math.sqrt(s.chi2) * 1.7)), col = o.color ? o.color(s) : s.is_signal ? 'var(--blue)' : 'var(--c-una)';
+      const r = Math.max(5, Math.min(26, Math.sqrt(s.chi2) * 1.7)), col = o.color ? o.color(s) : s.is_signal ? 'var(--bad)' : 'var(--c-una)';
       g += `<a href="${o.href ? o.href(s) : '#'}"><circle cx="${X(Math.max(1, s.a))}" cy="${Y(Math.max(.4, s.prr))}" r="${r}" style="fill:${col};opacity:${s.is_signal ? .78 : .35};stroke:var(--card)" stroke-width="2" ${tip(s.drug + ' + ' + s.event + '\nCases ' + s.a + ' · PRR ' + s.prr + ' · χ² ' + s.chi2)}/></a>`;
     });
     return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Signal map: cases versus PRR">${g}</svg>`;
   }
   function heat(drugs, events, cell, o = {}) {
-    const cw = 66, ch = 40, L = 96, T = 92, W = L + events.length * cw + 6, H = T + drugs.length * ch + 6;
+    const cw = 60, ch = 40, L = 96, T = 92, W = L + events.length * cw + 6, H = T + drugs.length * ch + 6;
     let g = '';
     events.forEach((e, j) => g += `<text transform="translate(${L + j * cw + cw / 2} ${T - 8}) rotate(-38)" class="ax" style="font-size:11.5px">${esc(e.length > 16 ? e.slice(0, 15) + '…' : e)}</text>`);
     drugs.forEach((d, i) => {
@@ -86,8 +86,8 @@
       events.forEach((e, j) => {
         const c = cell(d, e), x = L + j * cw, y = T + i * ch;
         if (!c) { g += `<rect x="${x + 2}" y="${y + 2}" width="${cw - 4}" height="${ch - 4}" rx="9" style="fill:var(--card-2)"/>`; return; }
-        const t = Math.min(1, Math.log10(Math.max(c.prr, 1)) / 1.55), col = c.is_signal ? `rgba(30,123,255,${.25 + .75 * t})` : `rgba(122,131,148,${.12 + .25 * Math.min(1, c.prr / 2)})`;
-        g += `<a href="${o.href ? o.href(c) : '#'}"><rect x="${x + 2}" y="${y + 2}" width="${cw - 4}" height="${ch - 4}" rx="9" style="fill:${col}${c.is_signal ? ';stroke:var(--blue)' : ''}" stroke-width="${c.is_signal ? 1.5 : 0}" ${tip(c.drug + ' + ' + c.event + '\nCases ' + c.a + ' · PRR ' + c.prr + (c.is_signal ? ' · SIGNAL' : ''))}/><text x="${x + cw / 2}" y="${y + ch / 2 + 4}" text-anchor="middle" style="font-size:11.5px;font-weight:650;fill:${c.is_signal && t > .55 ? '#fff' : 'var(--ink)'};pointer-events:none">${c.a}</text></a>`;
+        const t = Math.min(1, Math.log10(Math.max(c.prr, 1)) / 1.55), col = c.is_signal ? `rgba(207,34,46,${.25 + .75 * t})` : `rgba(122,131,148,${.12 + .25 * Math.min(1, c.prr / 2)})`;
+        g += `<a href="${o.href ? o.href(c) : '#'}"><rect x="${x + 2}" y="${y + 2}" width="${cw - 4}" height="${ch - 4}" rx="9" style="fill:${col}${c.is_signal ? ';stroke:var(--bad)' : ''}" stroke-width="${c.is_signal ? 1.5 : 0}" ${tip(c.drug + ' + ' + c.event + '\nCases ' + c.a + ' · PRR ' + c.prr + (c.is_signal ? ' · SIGNAL' : ''))}/><text x="${x + cw / 2}" y="${y + ch / 2 + 4}" text-anchor="middle" style="font-size:11.5px;font-weight:650;fill:${c.is_signal && t > .55 ? '#fff' : 'var(--ink)'};pointer-events:none">${c.a}</text></a>`;
       });
     });
     return `<div class="scroll"><svg class="chart" style="min-width:${W}px" viewBox="0 0 ${W} ${H}" role="img" aria-label="Drug by event heat map, numbers are case counts">${g}</svg></div>`;
@@ -148,11 +148,11 @@
   function patientTimeline(facts) {
     const on = facts.time_to_onset.status === 'verified' ? facts.time_to_onset.value : null;
     const W = 640, H = 150, L = 50, R = 50, y = 78;
-    const ev = [{ d: 0, label: 'Drug started', sub: 'Day 0', c: 'var(--blue)' }];
-    if (on != null) ev.push({ d: on, label: 'Event onset', sub: `Day ${on}`, c: 'var(--c-unl)' });
+    const ev = [{ d: 0, label: 'Drug started', sub: 'Day 0', c: 'var(--slate)' }];
+    if (on != null) ev.push({ d: on, label: 'Event onset', sub: `Day ${on}`, c: 'var(--bad)' });
     let rec = null; const dq = facts.dechallenge.quote || '', m = /(\d+)\s*(week|day)/i.exec(dq);
-    if (facts.dechallenge.value === 'positive' && on != null) { rec = m ? on + (m[2].toLowerCase().startsWith('w') ? +m[1] * 7 : +m[1]) : on + 10; ev.push({ d: on + 2, label: 'Drug stopped', sub: 'dechallenge', c: 'var(--warn)' }); ev.push({ d: rec, label: m ? 'Recovered' : 'Improved', sub: m ? `+${m[1]} ${m[2]}s` : 'timing not stated', c: 'var(--c-cert)' }); }
-    if (facts.rechallenge.value === 'positive' && rec != null) ev.push({ d: rec + 10, label: 'Rechallenge', sub: 'event recurred', c: 'var(--violet)' });
+    if (facts.dechallenge.value === 'positive' && on != null) { rec = m ? on + (m[2].toLowerCase().startsWith('w') ? +m[1] * 7 : +m[1]) : on + 10; ev.push({ d: on + 2, label: 'Drug stopped', sub: 'dechallenge', c: 'var(--slate)' }); ev.push({ d: rec, label: m ? 'Recovered' : 'Improved', sub: m ? `+${m[1]} ${m[2]}s` : 'timing not stated', c: 'var(--ok)' }); }
+    if (facts.rechallenge.value === 'positive' && rec != null) ev.push({ d: rec + 10, label: 'Rechallenge', sub: 'event recurred', c: 'var(--bad)' });
     if (facts.dechallenge.value === 'not_done') ev.push({ d: (on || 0) + 6, label: 'Drug continued', sub: 'no dechallenge', c: 'var(--c-una)' });
     const mx = Math.max(10, ...ev.map(e => e.d)) * 1.05, X = d => L + d / mx * (W - L - R);
     let g = `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" style="stroke:var(--line)" stroke-width="5" stroke-linecap="round"/>`;

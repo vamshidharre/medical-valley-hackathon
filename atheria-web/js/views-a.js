@@ -3,67 +3,67 @@
   'use strict';
   const { E, C, esc } = A;
   A.rerender = async () => { const y = window.scrollY; await A.render(); window.scrollTo(0, y); };
-  const KPI = (label, v, foot, ico, tone, spark) => `<div class="card kpi"><div class="ico" style="background:var(--${tone}-soft);color:var(--${tone})">${A.ico(ico)}</div><div class="lb">${label}</div><div class="v">${v}</div><div class="ft">${foot}</div>${spark ? spark : ''}</div>`;
+  const KPI = (label, v, foot, ico, tone, spark) => `<div class="card kpi"><div class="ico" style="background:var(--${tone}-soft);color:var(--${tone}-ink)">${A.ico(ico)}</div><div class="lb">${label}</div><div class="v">${v}</div><div class="ft">${foot}</div>${spark ? spark : ''}</div>`;
   const CRIT_LABEL = { identifiable_patient: 'Identifiable patient', identifiable_reporter: 'Identifiable reporter', suspect_product: 'Suspect product', adverse_event: 'Adverse event' };
+  const HI = (n, t) => `<h3 class="ht"><span class="hico">${A.ico(n)}</span>${t}</h3>`; // card title with icon tile
   const CRIT_CLS = { identifiable_patient: 'h-patient', identifiable_reporter: 'h-reporter', suspect_product: 'h-product', adverse_event: 'h-ae' };
 
   /* ======================= DASHBOARD ======================= */
-  const chanBadge = c => `<span class="badge ${c === 'safereport' ? 'b-teal' : 'b-mut'}">${A.ico(A.chanIcon(c), 'width="13" height="13"')}${c === 'safereport' ? 'SafeReport · Exasol' : A.chanLabel(c)}</span>`;
-  const KPITab = (tab, on, label, v, foot, ico, tone, spark) => `<button type="button" class="card kpi tab ${on ? 'on' : ''}" data-tab="${tab}"><div class="ico" style="background:var(--${tone}-soft);color:var(--${tone})">${A.ico(ico)}</div><div class="lb">${label}</div><div class="v">${v}</div><div class="ft">${foot}</div>${spark || ''}<svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>`;
-  const recordCard = r => `<a class="item" href="#/inbox?id=${r.id}"><div class="row">${chanBadge(r.channel)}<span class="sp"></span>${A.statusBadge(r)}</div><div class="t">${esc(r.text.replace(/\s+/g, ' '))}</div><div class="m">${r.confirmed ? `${C.criteriaDots(r.trace.inputs)}<span>${Object.values(r.trace.inputs).filter(Boolean).length}/4 criteria</span>` : '<span style="font-size:12px;color:var(--mut)">No decision confirmed yet</span>'}</div></a>`;
+  const chanBadge = c => `<span class="badge ${c === 'safereport_ai' ? 'b-ai' : 'b-mut'}">${A.ico(A.chanIcon(c), 'width="13" height="13"')}${A.chanLabel(c)}</span>`;
+  const KPITab = (tab, on, label, v, foot, ico, tone, spark) => `<button type="button" class="card kpi tab ${on ? 'on' : ''}" data-tab="${tab}"><div class="ico" style="background:var(--${tone}-soft);color:var(--${tone}-ink)">${A.ico(ico)}</div><div class="lb">${label}</div><div class="v">${v}</div>${foot ? `<div class="ft">${foot}</div>` : ''}${spark || ''}<svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>`;
+  const recordCard = r => `<a class="item" href="#/inbox?id=${r.id}"><div class="row">${chanBadge(r.channel)}<span class="sp"></span>${A.statusBadge(r)}</div><div class="t">${esc(A.preview(r.text))}</div><div class="m">${r.confirmed ? `${C.criteriaDots(r.trace.inputs)}<span>${Object.values(r.trace.inputs).filter(Boolean).length}/4 criteria</span>` : '<span style="font-size:12px;color:var(--mut)">No decision confirmed yet</span>'}</div></a>`;
   A.dashUI = A.dashUI || { tab: 'received' };
   A.views.dashboard = function () {
     const U = A.dashUI, ib = A.inbox, by = o => ib.filter(r => r.confirmed && r.finalOutcome === o).length;
     const valid = by('valid_icsr'), pot = by('potential_icsr'), non = by('non_icsr');
     const chanCounts = {}; ib.forEach(r => { chanCounts[r.channel] = (chanCounts[r.channel] || 0) + 1; });
-    const chanRows = Object.entries(chanCounts).sort((a, b) => b[1] - a[1]).map(([c, n]) => ({ label: A.chanLabel(c), value: n, text: n, color: A.chanColor(c) }));
+    const chanRows = Object.entries(chanCounts).sort((a, b) => b[1] - a[1]).map(([c, n]) => ({ label: A.chanLabel(c), value: n, text: n, color: c === 'safereport_ai' ? 'var(--violet)' : 'var(--slate)', icon: `<span class="rico${c === 'safereport_ai' ? ' ai' : ''}">${A.ico(A.chanIcon(c))}</span>`, tip: c === 'safereport_ai' ? `${A.chanLabel(c)}: ${n} · extracted by an AI agent` : null }));
     const inv = Object.keys(A.invState), builds = inv.map(A.build).filter(Boolean);
     const invCases = builds.reduce((a, b) => a + b.cases.length, 0);
     const months = {}, ser = {}; A.reports.forEach(r => { const m = r.date.slice(0, 7); months[m] = (months[m] || 0) + 1; if (r.serious) ser[m] = (ser[m] || 0) + 1; });
     const ml = Object.keys(months).sort(); const mlabel = ml.map(m => new Date(m + '-15').toLocaleString(undefined, { month: 'short', year: '2-digit' }));
     const donut = [{ label: 'Valid ICSR', value: valid, color: 'var(--ok)' }, { label: 'Escalated', value: pot, color: 'var(--warn)' }, { label: 'Not an ICSR', value: non, color: 'var(--c-una)' }];
-    const critRows = E.CRITERIA.map(k => { const n = ib.filter(r => r.elements[k].present).length; return { label: CRIT_LABEL[k], value: n, text: `${n}/${ib.length}`, color: n === ib.length ? 'var(--ok)' : 'var(--blue)', sub: ib.length - n ? `${ib.length - n} record(s) could not establish this` : 'present in every record' }; });
-    const mx = Math.max(1, ib.length), fun = [['Received', ib.length, 'var(--blue)'], ['≥ 3 criteria found', ib.filter(r => Object.values(r.trace.inputs).filter(Boolean).length >= 3).length, 'var(--teal)'], ['Product + event (core)', ib.filter(r => r.outcome !== 'non_icsr').length, 'var(--violet)'], ['Valid ICSR', valid, 'var(--ok)']];
-    const watch = A.flagged.slice(0, 6).map(p => { const b = A.invState[p.signal_id] ? A.build(p.signal_id) : null; return `<a class="item" href="${A.sigUrl(p.signal_id)}"><div class="row"><b>${esc(A.sigLabel(p))}</b><span class="sp"></span>${b ? A.recBadge(b.rec.rule_id) : '<span class="badge b-info">Not investigated</span>'}</div><div class="m"><span>PRR <b class="mono">${p.prr}</b></span><span>${p.a} cases</span>${b ? `<span style="flex:1;min-width:90px">${C.stack(Object.entries(b.rec.inputs.distribution).map(([k, v]) => ({ label: k, value: v, color: C.CAT[k] })), { h: 8 })}</span>` : ''}</div></a>`; }).join('');
+    const critRows = E.CRITERIA.map(k => { const n = ib.filter(r => r.elements[k].present).length; return { label: CRIT_LABEL[k], value: n, text: `${n}/${ib.length}`, color: 'var(--slate)', sub: ib.length - n ? `${ib.length - n} record(s) could not establish this` : 'present in every record' }; });
+    const mx = Math.max(1, ib.length), fun = [['Received', ib.length, 'var(--slate)'], ['≥ 3 criteria found', ib.filter(r => Object.values(r.trace.inputs).filter(Boolean).length >= 3).length, 'var(--slate)'], ['Product + event (core)', ib.filter(r => r.outcome !== 'non_icsr').length, 'var(--slate)'], ['Valid ICSR', valid, 'var(--slate)']];
+    const watch = A.flagged.slice(0, 6).map(p => { const b = A.invState[p.signal_id] ? A.build(p.signal_id) : null; return `<a class="item" href="${A.sigUrl(p.signal_id)}"><div class="row"><b>${esc(A.sigLabel(p))}</b><span class="sp"></span>${b ? A.recBadge(b.rec.rule_id) : '<span class="badge b-info">Not investigated</span>'}</div><div class="m"><span>PRR <b class="mono">${Number(p.prr).toFixed(1)}</b></span><span>${p.a} cases</span>${b ? `<span style="flex:1;min-width:90px">${C.stack(Object.entries(b.rec.inputs.distribution).map(([k, v]) => ({ label: k, value: v, color: C.CAT[k] })), { h: 8 })}</span>` : ''}</div></a>`; }).join('');
 
     // ---- the four tabs, each a self-contained, focused view of one KPI ----
     const tabReceived = `
-      <div class="grid g-7-5 mt" style="align-items:center"><div class="card"><div class="hd"><div><h3>Where records come from</h3><div class="sub">Every intake channel, read and decided by the same rule</div></div></div>${C.hbars(chanRows)}<div class="row mt" style="flex-wrap:wrap;gap:8px">${A.CHANNELS.map(chanBadge).join('')}</div></div>
-        <div class="card"><div class="hd"><div><h3>Reporting volume</h3><div class="sub">Per month, with the serious share</div></div></div>${C.line([{ name: 'All reports', values: ml.map(m => months[m]), color: 'var(--blue)', area: 1 }, { name: 'Serious', values: ml.map(m => ser[m] || 0), color: 'var(--c-unl)' }], mlabel, { label: 'Monthly reports' })}</div></div>
-      <div class="card mt"><div class="hd"><div><h3>Intake funnel</h3><div class="sub">Where records go after being received</div></div></div>${C.hbars(fun.map(([l, v, c]) => ({ label: l, value: v, color: c, text: v })), { max: mx })}</div>
-      <div class="card mt"><div class="hd"><div><h3>Latest records</h3><div class="sub">Newest first</div></div><a href="#/inbox">Open triage inbox</a></div>${ib.length ? `<div class="grid g3">${ib.slice(0, 6).map(recordCard).join('')}</div>` : '<div class="empty"><b>No records yet</b>Run a literature sweep to bring in new records.</div>'}</div>`;
+      <div class="bento mt"><div class="card b-5"><div class="hd"><div>${HI('inbox', "Where records come from")}</div></div>${C.hbars(chanRows)}</div>
+        <div class="card b-7"><div class="hd"><div>${HI('trend', "Reporting volume")}<div class="sub">Reports received per month · ${A.reports.length.toLocaleString('en')} reports, counted directly</div></div><span class="badge b-mut" title="Plain counts from the report dataset; no model is involved">No AI</span></div><div class="legend" style="margin-bottom:13px"><span><i style="background:var(--slate)"></i>All reports</span><span><i style="background:var(--bad)"></i>Serious reports</span></div>${C.line([{ name: 'All reports', values: ml.map(m => months[m]), color: 'var(--slate)', area: 1 }, { name: 'Serious', values: ml.map(m => ser[m] || 0), color: 'var(--bad)' }], mlabel, { label: 'Monthly reports', w: 400 })}</div>
+      <div class="card b-4"><div class="hd"><div>${HI('funnel', "Intake funnel")}</div></div>${C.hbars(fun.map(([l, v, c]) => ({ label: l, value: v, color: c, text: v })), { max: mx })}</div>
+      <div class="card b-8"><div class="hd"><div>${HI('file', "Latest records")}</div><a href="#/inbox">Open triage inbox</a></div>${ib.length ? `<div class="grid g3">${ib.slice(0, 6).map(recordCard).join('')}</div>` : '<div class="empty"><b>No records yet</b>Run a literature sweep to bring in new records.</div>'}</div></div>`;
 
     const tabValid = `
-      <div class="grid g-5-7 mt" style="align-items:center"><div class="card"><div class="hd"><div><h3>All triage outcomes</h3><div class="sub">Decided by rule <code>val_001 v1.0.0</code></div></div></div><div class="row" style="justify-content:center;gap:24px">${C.donut(donut, { size: 160, sub: 'records', center: ib.length })}<div style="min-width:150px">${C.legend(donut).replace('class="legend"', 'class="legend" style="flex-direction:column;gap:8px"')}</div></div></div>
-        <div class="card"><div class="hd"><div><h3>Why these count as valid</h3><div class="sub">Share of all records where each ICSR criterion was found</div></div></div>${C.hbars(critRows, { max: Math.max(1, ib.length) })}</div></div>
-      <div class="card mt"><div class="hd"><div><h3>Valid ICSR records</h3><div class="sub">All 4 criteria met — patient, reporter, product and event — and confirmed by a reviewer</div></div><a href="#/inbox">Open triage inbox</a></div>${valid ? `<div class="grid g3">${ib.filter(r => r.confirmed && r.finalOutcome === 'valid_icsr').slice(0, 6).map(recordCard).join('')}</div>` : '<div class="empty"><b>None yet</b>No record has been confirmed as valid. Open the triage inbox, enable AI on a record and confirm it.</div>'}</div>`;
+      <div class="bento mt"><div class="card b-5"><div class="hd"><div>${HI('pie', "All triage outcomes")}<div class="sub">Decided by rule <code>val_001 v1.0.0</code></div></div></div><div class="row" style="justify-content:center;gap:21px">${C.donut(donut, { size: 160, sub: 'records', center: ib.length })}<div style="min-width:150px">${C.legend(donut).replace('class="legend"', 'class="legend" style="flex-direction:column;gap:8px"')}</div></div></div>
+        <div class="card b-7"><div class="hd"><div>${HI('listcheck', "Why these count as valid")}</div></div>${C.hbars(critRows, { max: Math.max(1, ib.length) })}</div>
+      <div class="card"><div class="hd"><div>${HI('check', "Valid ICSR records")}</div><a href="#/inbox">Open triage inbox</a></div>${valid ? `<div class="grid g3">${ib.filter(r => r.confirmed && r.finalOutcome === 'valid_icsr').slice(0, 6).map(recordCard).join('')}</div>` : '<div class="empty"><b>None yet</b>No record has been confirmed as valid. Open the triage inbox, enable AI on a record and confirm it.</div>'}</div></div>`;
 
     const missing = E.CRITERIA.map(k => ({ k, n: ib.filter(r => r.confirmed && r.finalOutcome === 'potential_icsr' && !r.elements[k].present).length })).filter(x => x.n).sort((a, b) => b.n - a.n);
     const tabAwaiting = `
-      <div class="card mt"><div class="hd"><div><h3>What's missing on escalated records</h3><div class="sub">Core facts (product + event) are present — these are what stopped a record being counted valid</div></div></div>${missing.length ? C.hbars(missing.map(x => ({ label: CRIT_LABEL[x.k], value: x.n, text: `${x.n} record(s)`, color: 'var(--warn)' })), { max: Math.max(1, pot) }) : '<div class="empty"><b>Nothing missing</b>No record is currently confirmed as escalated.</div>'}</div>
-      <div class="card mt"><div class="hd"><div><h3>Awaiting review</h3><div class="sub">Product and event are present, but the record could not be confirmed complete — never guessed, always escalated to a person</div></div><a href="#/inbox">Open triage inbox</a></div>${pot ? `<div class="grid g3">${ib.filter(r => r.confirmed && r.finalOutcome === 'potential_icsr').slice(0, 6).map(recordCard).join('')}</div>` : '<div class="empty"><b>Nothing awaiting review</b>No record has been confirmed as escalated yet.</div>'}</div>`;
+      <div class="bento mt"><div class="card b-5"><div class="hd"><div>${HI('alert', "What's missing on escalated records")}</div></div>${missing.length ? C.hbars(missing.map(x => ({ label: CRIT_LABEL[x.k], value: x.n, text: `${x.n} record(s)`, color: 'var(--warn)' })), { max: Math.max(1, pot) }) : '<div class="empty"><b>Nothing missing</b>No record is currently confirmed as escalated.</div>'}</div>
+      <div class="card b-7"><div class="hd"><div>${HI('users', "Awaiting review")}</div><a href="#/inbox">Open triage inbox</a></div>${pot ? `<div class="grid g3">${ib.filter(r => r.confirmed && r.finalOutcome === 'potential_icsr').slice(0, 6).map(recordCard).join('')}</div>` : '<div class="empty"><b>Nothing awaiting review</b>No record has been confirmed as escalated yet.</div>'}</div></div>`;
 
     const tabFlagged = `
-      <div class="grid g-7-5 mt"><div class="card"><div class="hd"><div><h3>Signal map</h3><div class="sub">Every drug–event pair in the 1,261-report dataset. Larger bubble = stronger χ². Click one to investigate.</div></div><a class="btn ghost sm" href="#/signals">Open signals</a></div>${C.bubble(A.pairs, { href: s => A.sigUrl(s.signal_id) })}</div>
-        <div class="card"><div class="hd"><div><h3>Signal watchlist</h3><div class="sub">Ranked by PRR, with what the rules concluded</div></div></div><div class="list">${watch}</div></div></div>
-      <div class="card mt"><div class="hd"><div><h3>Reviewer time saved</h3><div class="sub">Assumes 15 minutes of manual reading per case</div></div></div><div class="row" style="justify-content:space-around">${C.ring(Math.min(1, invCases * 15 / 60 / 40), { color: 'var(--ok)', size: 130, label: 'time saved' })}<div><div class="v" style="font-size:34px;font-weight:700">${(invCases * 15 / 60).toFixed(1)} h</div><div style="color:var(--mut);font-size:13px">${invCases} case narratives read<br>by AI, every quote verified</div></div></div><div class="callout info mt" style="font-size:12.5px">The estimate is an assumption, not a measurement. Ring shows progress toward a 40-hour reference workload.</div></div>`;
+      <div class="bento mt"><div class="card b-7"><div class="hd"><div>${HI('scatter', "Signal map")}<div class="sub">Larger bubble = stronger χ²</div></div><a class="btn ghost sm" href="#/signals">Open signals</a></div>${C.bubble(A.pairs, { href: s => A.sigUrl(s.signal_id), w: 400, h: 300 })}</div>
+        <div class="card b-5"><div class="hd"><div>${HI('eye', "Signal watchlist")}<div class="sub">Ranked by PRR</div></div></div><div class="list">${watch}</div></div>
+      <div class="card"><div class="hd"><div>${HI('clock', "Reviewer time saved")}<div class="sub">Assumes 15 minutes of manual reading per case</div></div></div><div class="row" style="justify-content:space-around">${C.ring(Math.min(1, invCases * 15 / 60 / 40), { color: 'var(--slate)', size: 130, label: 'time saved' })}<div><div class="v" style="font-size:34px;font-weight:700">${(invCases * 15 / 60).toFixed(1)} h</div><div style="color:var(--mut);font-size:13px">${invCases} case narratives read<br>by AI, every quote verified</div></div></div><div class="callout info mt" style="font-size:12.5px">The estimate is an assumption, not a measurement. Ring shows progress toward a 40-hour reference workload.</div></div></div>`;
 
     const TABS = { received: tabReceived, valid: tabValid, awaiting: tabAwaiting, flagged: tabFlagged };
     if (!TABS[U.tab]) U.tab = 'received';
     const body = `
-    <div class="hero fade"><div><h2>Every safety decision, explained.</h2><p>AI reads the text. A versioned rules engine decides. You approve. Each answer below links back to the exact words in the source.</p>
-      <div class="row" style="margin-top:20px"><a class="btn white" href="#/inbox">${A.ico('inbox')} Open triage inbox</a><a class="btn" style="background:rgba(255,255,255,.2);box-shadow:none" href="#/signals">${A.ico('pulse')} Investigate signals</a></div></div>${A.cross(210)}</div>
-    <div class="grid g4 mt">
-      ${KPITab('received', U.tab === 'received', 'Records received', ib.length, 'Tap to see where from', 'inbox', 'blue', C.spark([1, 2, 2, 3, 3, 4, ib.length || 1], { color: 'var(--blue)' }))}
-      ${KPITab('valid', U.tab === 'valid', 'Valid ICSRs', valid, 'Tap to see which, and why', 'check', 'ok')}
-      ${KPITab('awaiting', U.tab === 'awaiting', 'Awaiting review', pot, 'Tap to see what’s missing', 'alert', 'warn')}
-      ${KPITab('flagged', U.tab === 'flagged', 'Signals flagged', A.flagged.length, 'Tap to open the signal map', 'pulse', 'violet', C.spark(A.flagged.map(p => p.prr).slice().reverse().map(v => Math.log10(v) + 1), { color: 'var(--violet)' }))}</div>
+    <div class="bento bento-top"><div class="hero fade"><div><h2>Every safety decision, explained.</h2>
+      <div class="row" style="margin-top:21px"><a class="btn" href="#/inbox">${A.ico('inbox')} Open triage inbox</a><a class="btn ghost" href="#/signals">${A.ico('pulse')} Investigate signals</a></div></div>${A.cross(210)}</div>
+      ${KPITab('received', U.tab === 'received', 'Records received', ib.length, '', 'inbox', 'slate', C.spark([1, 2, 2, 3, 3, 4, ib.length || 1], { color: 'var(--slate)' }))}
+      ${KPITab('valid', U.tab === 'valid', 'Valid ICSRs', valid, '', 'check', 'ok')}
+      ${KPITab('awaiting', U.tab === 'awaiting', 'Awaiting review', pot, '', 'alert', 'warn')}
+      ${KPITab('flagged', U.tab === 'flagged', 'Signals flagged', A.flagged.length, '', 'pulse', 'bad', C.spark(A.flagged.map(p => p.prr).slice().reverse().map(v => Math.log10(v) + 1), { color: 'var(--slate)' }))}</div>
     ${TABS[U.tab]}`;
     A.after = () => { document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { A.dashUI.tab = b.dataset.tab; A.rerender(); }); };
-    return A.shell('Hello,<br>' + esc(A.user.name), 'Pharmacovigilance command center for ICSR triage and signal investigation.', body);
+    return A.shell('Hello,<br>' + esc(A.user.name), '', body);
   };
   A.flowStrip = (active) => {
-    const st = [['Statistics', 'detect', 'PRR · ROR 95% CI · χ² · Evans', 'b-teal'], ['AI', 'extracts', 'Reads text, returns facts with verbatim quotes', 'b-vio'], ['Code', 'verifies', 'Every quote located at real character offsets', 'b-info'], ['Rules', 'decide', 'Versioned, pure, replayable', 'b-warn'], ['Human', 'approves', 'Override with a reason, sign off', 'b-ok']];
+    const st = [['Statistics', 'detect', 'PRR · ROR 95% CI · χ² · Evans', 'b-teal'], ['AI', 'extracts', 'Reads text, returns facts with verbatim quotes', 'b-vio'], ['Code', 'verifies', 'Every quote located at real character offsets', 'b-info'], ['Rules', 'decide', 'Versioned, pure, replayable', 'b-teal'], ['Human', 'approves', 'Override with a reason, sign off', 'b-ok']];
     return `<div class="flow">${st.map((s, i) => `<div class="st ${active === i ? 'on' : active > i ? 'done' : ''}"><span class="badge ${s[3]} who">${s[0]}</span><b>${s[1]}</b><span>${s[2]}</span></div>`).join('')}</div>`;
   };
 
@@ -87,7 +87,7 @@
   }
   A.views.literature = function () {
     const L = A.lit, r = L.res;
-    const body = `<div class="row" style="margin-bottom:16px"><div class="callout ${L.exasol && L.exasol.ok ? 'ok' : 'info'}" style="flex:1;font-size:13px" id="exStatus">${L.exasol === undefined ? 'Checking Exasol…' : L.exasol.ok ? `<b>Exasol is being used:</b> this schema (<code>ATHERIA_PV.LITERATURE_PAPERS</code>) on the local Exasol database currently holds <b>${L.exasol.literature_papers}</b> paper(s) — the same database this project's Exasol MCP server reads from.` : `<b>Exasol not reachable:</b> ${esc(L.exasol.error || 'unknown error')}`}</div></div>
+    const body = `<div class="row" style="margin-bottom:16px"><div class="callout ${L.exasol && L.exasol.ok ? 'ok' : 'info'}" style="flex:1;font-size:13px" id="exStatus">${L.exasol === undefined ? 'Checking the literature database…' : L.exasol.ok ? `<b>Saving to the literature database.</b> It holds <b>${L.exasol.literature_papers}</b> paper(s).${A.techDetails('Exasol schema ATHERIA_PV.LITERATURE_PAPERS')}` : `<b>Results aren't being saved to the literature database right now.</b> Sweeps still run, and new articles still reach the triage inbox.${A.techDetails(L.exasol.error || 'unknown error')}`}</div></div>
     <div class="grid g-5-7" style="align-items:start"><form class="card" id="lf2"><h3>Standing query</h3><div class="sub" style="margin-bottom:14px">Marketing authorisation holders must screen published literature for reactions to their products.</div>
       <div class="row" style="margin-bottom:14px">${PRESETS.map(p => `<button type="button" class="chip ${L.q === p[1] ? 'on' : ''}" data-q="${esc(p[1])}">${p[0]}</button>`).join('')}</div>
       <div class="field"><label for="lq">PubMed query</label><input id="lq" value="${esc(L.q)}"></div><div class="field mt"><label for="ln2">Max articles</label><select id="ln2">${[1, 2, 3, 5, 8].map(n => `<option ${L.n === n ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
@@ -121,6 +121,7 @@
 
   /* ======================= INBOX ======================= */
   A.inboxUI = A.inboxUI || { outcome: '', channel: '', q: '', decision: {} };
+  A.inboxUI.manual = A.inboxUI.manual || {}; // per-record manual triage drafts: { crit: { k: { present, quote } } }
   const OUTCOME_CHOICES = [['valid_icsr', 'Valid ICSR'], ['potential_icsr', 'Escalate (Potential ICSR)'], ['non_icsr', 'Not an ICSR']];
   A.views.inbox = function ({ q }) {
     const U = A.inboxUI, ib = A.inbox, id = q.get('id') || (A.inboxSel && ib.find(r => r.id === A.inboxSel) ? A.inboxSel : (ib[0] || {}).id);
@@ -129,10 +130,9 @@
     const sel = ib.find(r => r.id === id), by = o => ib.filter(r => r.confirmed && r.finalOutcome === o).length;
     const chans = [...new Set(ib.map(r => r.channel))];
     const stat = (l, v, t) => `<div class="card kpi" style="padding:16px 20px"><div class="lb">${l}</div><div class="v" style="font-size:28px;color:var(--${t})">${v}</div></div>`;
-    const row = r => `<div class="row">${chanBadge(r.channel)}${r.sample ? '<span class="badge b-info">sample</span>' : ''}<span class="sp"></span>${A.statusBadge(r)}</div><div class="t">${esc(r.text.replace(/\s+/g, ' '))}</div><div class="m">${r.confirmed ? `${C.criteriaDots(r.trace.inputs)}<span>${Object.values(r.trace.inputs).filter(Boolean).length}/4</span><span class="sp"></span><span>Priority</span><span style="width:60px">${C.stack([{ label: 'priority', value: r.priority, color: r.priority > .7 ? 'var(--bad)' : r.priority > .45 ? 'var(--warn)' : 'var(--blue)' }, { label: '', value: 1 - r.priority, color: 'var(--line)' }], { h: 7 })}</span>` : `<span style="font-size:12px;color:var(--mut)">${r.liveAI ? 'Analysed — awaiting a reviewer’s confirmation' : 'Received, not yet analysed'}</span>`}</div>`;
-    const body = `<div class="callout info mt" style="font-size:13px;margin-bottom:16px">Nothing counts as Valid, Escalated or Not an ICSR until a reviewer confirms it. Open a record, click <b>Enable AI</b>, then confirm or change its determination.</div>
-    <div class="grid g4">${stat('Total records', ib.length, 'ink')}${stat('Valid ICSR', by('valid_icsr'), 'ok')}${stat('Escalated', by('potential_icsr'), 'warn')}${stat('Not ICSR', by('non_icsr'), 'mut')}</div>
-    <div class="grid g-5-7 mt" style="align-items:start"><div class="card"><div class="row" style="margin-bottom:12px"><input class="input" id="iq" placeholder="Search text…" value="${esc(U.q)}" style="max-width:200px;padding:9px 14px"><select class="input" id="ic" style="max-width:170px;padding:9px 14px"><option value="">All channels</option>${chans.map(c => `<option value="${c}" ${U.channel === c ? 'selected' : ''}>${A.chanLabel(c)}</option>`).join('')}</select><button class="btn ghost sm" id="sync-db" style="margin-left:auto;gap:6px" title="Sync live reports from Exasol"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">${A.I.link}</svg> Sync Exasol</button></div>
+    const row = r => `<div class="row">${chanBadge(r.channel)}<span class="sp"></span>${A.statusBadge(r)}</div><div class="t">${esc(A.preview(r.text))}</div><div class="m">${r.confirmed ? `${C.criteriaDots(r.trace.inputs)}<span>${Object.values(r.trace.inputs).filter(Boolean).length}/4</span><span class="sp"></span><span>Priority</span><span style="width:60px">${C.stack([{ label: 'priority', value: r.priority, color: r.priority > .7 ? 'var(--bad)' : r.priority > .45 ? 'var(--warn)' : 'var(--blue)' }, { label: '', value: 1 - r.priority, color: 'var(--line)' }], { h: 7 })}</span>` : `<span style="font-size:12px;color:var(--mut)">${r.liveAI ? 'Analysed — awaiting a reviewer’s confirmation' : 'Received, not yet analysed'}</span>`}</div>`;
+    const body = `<div class="grid g4">${stat('Total records', ib.length, 'ink')}${stat('Valid ICSR', by('valid_icsr'), 'ok')}${stat('Escalated', by('potential_icsr'), 'warn')}${stat('Not ICSR', by('non_icsr'), 'mut')}</div>
+    <div class="grid g-5-7 mt" style="align-items:start"><div class="card"><div class="row" style="margin-bottom:12px"><input class="input" id="iq" placeholder="Search text…" value="${esc(U.q)}" style="max-width:200px;padding:9px 14px"><select class="input" id="ic" style="max-width:170px;padding:9px 14px"><option value="">All channels</option>${chans.map(c => `<option value="${c}" ${U.channel === c ? 'selected' : ''}>${A.chanLabel(c)}</option>`).join('')}</select></div>
       <div class="row" style="margin-bottom:14px">${[['', 'All'], ['valid_icsr', 'Valid'], ['potential_icsr', 'Escalated'], ['non_icsr', 'Not ICSR']].map(([v, l]) => `<button class="chip ${U.outcome === v ? 'on' : ''}" data-o="${v}">${l}</button>`).join('')}</div>
       <div class="list" style="max-height:70vh;overflow:auto;padding:2px">${vis.map(r => `<div class="item ${r.id === id ? 'sel' : ''}" data-id="${r.id}" tabindex="0" role="button">${row(r)}</div>`).join('') || '<div class="empty"><b>Nothing here</b>No records match these filters.</div>'}</div></div>
       <div class="sticky-r">${sel ? detail(sel) : '<div class="card empty"><b>Select a record</b>Pick one from the list to see its evidence and decision trace.</div>'}</div></div>`;
@@ -140,14 +140,6 @@
       document.querySelectorAll('.item[data-id]').forEach(el => { const go = () => { A.inboxSel = el.dataset.id; history.replaceState(null, '', '#/inbox?id=' + el.dataset.id); A.rerender(); }; el.onclick = go; el.onkeydown = e => { if (e.key === 'Enter') go(); }; });
       document.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { U.outcome = b.dataset.o; A.rerender(); });
       document.getElementById('ic').onchange = e => { U.channel = e.target.value; A.rerender(); };
-      const sb = document.getElementById('sync-db');
-      if (sb) sb.onclick = async () => {
-        sb.disabled = true; sb.textContent = 'Syncing…';
-        await A.loadDbReports();
-        await A.loadDbSignals();
-        A.toast('Synced with Exasol (PV.REPORTS & PV.SIGNALS)');
-        await A.rerender();
-      };
       let tm; document.getElementById('iq').oninput = e => { U.q = e.target.value; clearTimeout(tm); tm = setTimeout(async () => { await A.rerender(); const el = document.getElementById('iq'); el.focus(); el.setSelectionRange(99, 99); }, 250); };
       if (sel) { A.bindMarks(document.getElementById('srcbox')); const rp = document.getElementById('replay'); if (rp) rp.onclick = () => { const again = E.evaluateValidity(Object.fromEntries(E.CRITERIA.map(k => [k, sel.elements[k]]))), same = E.canonical(again.trace) === E.canonical(sel.trace); document.getElementById('rpres').innerHTML = same ? `<div class="callout ok">Replayed from the stored criteria: <b>identical decision and trace</b> (sha256 ${E.sha256(E.canonical(again.trace)).slice(0, 12)}…). Same inputs and rule version always give the same outcome.</div>` : '<div class="callout bad">Replay differs from stored decision.</div>'; A.auditAdd('decision_replay', A.user.name, { source_record_id: sel.id, identical: same }); }; }
       if (sel) {
@@ -157,8 +149,8 @@
           const errBox = document.getElementById('aiErr'); if (errBox) errBox.innerHTML = '';
           const out = await A.callClaude(sel.text);
           if (!out || !out.ok) {
-            if (errBox) errBox.innerHTML = `<div class="callout bad mt" style="font-size:12.5px"><b>Could not analyze this record.</b> ${esc((out && out.error) || 'Unknown error.')}</div>`;
-            b.disabled = false; b.innerHTML = `${A.ico('bot')} Enable AI`;
+            if (errBox) errBox.innerHTML = `<div class="callout bad mt" style="font-size:13px">${A.aiError('record', out && out.error)}<div style="margin-top:6px">You can still triage it by hand with <b>Triage manually</b>.</div></div>`;
+            b.disabled = false; b.innerHTML = `${A.ico('botai')} Enable AI`;
             return;
           }
           const elements = {};
@@ -169,7 +161,7 @@
           });
           const v = E.evaluateValidity(elements);
           sel.elements = elements; sel.outcome = v.outcome; sel.trace = v.trace; sel.priority = E.priority(elements, sel.serious);
-          sel.model = out.model || 'claude'; sel.prompt = 'claude_extract_v1 (live)'; sel.liveAI = true;
+          sel.model = out.model || 'claude'; sel.prompt = 'claude_extract_v1 (live)'; sel.liveAI = true; sel.readBy = 'ai'; delete U.manual[sel.id];
           U.decision[sel.id] = { choice: v.outcome, reason: '' };
           A.auditAdd('ai_extraction', 'system', { source_record_id: sel.id, model_id: sel.model, prompt_version: sel.prompt, criteria: v.trace.inputs, live: true }, false);
           A.auditAdd('rule_evaluation', 'system', { source_record_id: sel.id, rule_id: v.trace.rule_id, rule_set_version: v.trace.rule_set_version, fired: v.trace.fired_rules, outcome: v.outcome }, false);
@@ -177,6 +169,45 @@
           A.toast('Analyzed live by Claude · proposed ' + A.OUT_LABEL[v.outcome]);
           A.rerender();
         };
+      }
+      if (sel && !sel.liveAI) {
+        const mt = document.getElementById('manualBtn'); if (mt) mt.onclick = () => { U.manual[sel.id] = { crit: Object.fromEntries(E.CRITERIA.map(k => [k, { present: null, quote: '' }])) }; A.rerender(); };
+        const M = U.manual[sel.id];
+        if (M) {
+          const check = k => { const c = M.crit[k], out = document.getElementById('mq-' + k + '-st'); if (!out) return; const sp = c.quote.trim() && E.locateQuote(c.quote.trim(), sel.text);
+            out.className = 'mq-st ' + (sp ? 'ok' : c.quote.trim() ? 'bad' : '');
+            out.textContent = sp ? `Found in the source at characters ${sp[0]}–${sp[1]}` : c.quote.trim() ? 'Not found in the source text. Copy the exact words.' : 'Add the exact words from the source.';
+            applyState(); };
+          const ready = () => E.CRITERIA.every(k => { const c = M.crit[k]; return c.present === false || (c.present === true && c.quote.trim() && E.locateQuote(c.quote.trim(), sel.text)); });
+          const applyState = () => { const ap = document.getElementById('manualApply'); if (ap) ap.disabled = !ready(); };
+          document.querySelectorAll('[data-mp]').forEach(b => b.onclick = () => { const [k, v] = b.dataset.mp.split(':'); M.crit[k].present = v === 'y'; A.rerender(); });
+          E.CRITERIA.forEach(k => {
+            const inp = document.getElementById('mq-' + k); if (inp) inp.oninput = () => { M.crit[k].quote = inp.value; check(k); };
+            const use = document.getElementById('mq-' + k + '-use');
+            if (use) { use.onmousedown = e => e.preventDefault(); use.onclick = () => {
+              const sl = window.getSelection(), box = document.getElementById('rawsrc');
+              if (!sl || !box || !sl.toString().trim() || !box.contains(sl.anchorNode)) { A.toast('Highlight the words in the source text first'); return; }
+              M.crit[k].quote = sl.toString().trim(); inp.value = M.crit[k].quote; check(k); }; }
+            if (M.crit[k].present) check(k);
+          });
+          applyState();
+          const cancel = document.getElementById('manualCancel'); if (cancel) cancel.onclick = () => { delete U.manual[sel.id]; A.rerender(); };
+          const ap = document.getElementById('manualApply');
+          if (ap) ap.onclick = () => {
+            if (!ready()) return;
+            const elements = {};
+            E.CRITERIA.forEach(k => { const c = M.crit[k], sp = c.present && E.locateQuote(c.quote.trim(), sel.text); elements[k] = sp ? { present: true, quote: c.quote.trim(), start: sp[0], end: sp[1] } : { present: false }; });
+            const v = E.evaluateValidity(elements);
+            sel.elements = elements; sel.outcome = v.outcome; sel.trace = v.trace; sel.priority = E.priority(elements, sel.serious);
+            sel.model = 'reviewer: ' + A.user.name; sel.prompt = 'manual_triage v1'; sel.liveAI = true; sel.readBy = 'human';
+            U.decision[sel.id] = { choice: v.outcome, reason: '' }; delete U.manual[sel.id];
+            A.auditAdd('human_triage_reading', A.user.name, { source_record_id: sel.id, criteria: v.trace.inputs, quotes_verified: Object.values(elements).filter(e => e.present).length }, false);
+            A.auditAdd('rule_evaluation', 'system', { source_record_id: sel.id, rule_id: v.trace.rule_id, rule_set_version: v.trace.rule_set_version, fired: v.trace.fired_rules, outcome: v.outcome }, false);
+            A.persistAudit(); A.persistInbox();
+            A.toast('Rule applied to your reading · proposes ' + A.OUT_LABEL[v.outcome]);
+            A.rerender();
+          };
+        }
       }
       if (sel && sel.liveAI && !sel.confirmed) {
         const d = U.decision[sel.id] || (U.decision[sel.id] = { choice: sel.outcome, reason: '' });
@@ -195,16 +226,24 @@
       }
       if (sel && sel.confirmed) { const ch = document.getElementById('changeDecision'); if (ch) ch.onclick = () => { sel.confirmed = false; U.decision[sel.id] = { choice: sel.finalOutcome, reason: '' }; A.rerender(); }; }
     };
-    return A.shell('Triage inbox', 'Nothing is counted until a reviewer confirms it. Click any evidence quote to see where it sits in the source text.', body);
+    return A.shell('Triage inbox', 'Nothing counts until a reviewer confirms it. Open a record, read it with AI or by hand, then confirm the outcome.', body);
   };
   function detail(r) {
     if (!r.liveAI) {
+      const M = A.inboxUI.manual[r.id];
+      const manual = !M ? '' : `<div class="card mt manual" style="background:var(--card-2)"><div class="row"><h4 style="margin:0">Manual triage</h4><span class="sp"></span><span class="badge b-info">No AI</span></div>
+        <div class="sub" style="margin:6px 0 13px">For each criterion, say whether the report shows it and give the exact words. Each quote is checked against the source, the same check the AI's quotes go through.</div>
+        <div class="list" style="gap:13px">${E.CRITERIA.map(k => { const c = M.crit[k]; return `<div class="mcrit"><div class="row" style="justify-content:space-between"><b>${CRIT_LABEL[k]}</b>
+          <div class="seg" role="group" aria-label="${CRIT_LABEL[k]}"><button type="button" data-mp="${k}:y" class="${c.present === true ? 'on' : ''}" aria-pressed="${c.present === true}">Found</button><button type="button" data-mp="${k}:n" class="${c.present === false ? 'on' : ''}" aria-pressed="${c.present === false}">Not found</button></div></div>
+          ${c.present ? `<div class="field" style="margin-top:8px"><label for="mq-${k}">Exact words from the source</label><div class="row" style="flex-wrap:nowrap"><input id="mq-${k}" class="input" value="${esc(c.quote)}" placeholder="Type or paste, or highlight in the source and use the button"><button type="button" class="btn ghost sm" id="mq-${k}-use">Use selected text</button></div><div class="mq-st" id="mq-${k}-st" aria-live="polite"></div></div>` : ''}</div>`; }).join('')}</div>
+        <div class="row mt"><button class="btn" id="manualApply" type="button" disabled>${A.ico('check')} Apply rule val_001</button><button class="btn ghost" id="manualCancel" type="button">Cancel</button><span style="font-size:12.5px;color:var(--mut)">The rule then proposes an outcome for you to confirm.</span></div></div>`;
       return `<div class="card fade"><div class="row"><h3>Record ${esc(r.id.slice(4))}</h3><span class="sp"></span>${A.statusBadge(r)}</div>
-        <div class="row mt" style="align-items:center;gap:12px;margin:14px 0"><button class="btn" id="enableAi" type="button">${A.ico('bot')} Enable AI</button><span style="font-size:12.5px;color:var(--mut)">Sends this one record to the real Claude API, live, right now</span></div>
+        <div class="row mt" style="align-items:center;gap:13px;margin:14px 0"><button class="btn ai" id="enableAi" type="button">${A.ico('botai')} Enable AI</button><button class="btn ghost" id="manualBtn" type="button" ${M ? 'disabled' : ''}>${A.ico('pen')} Triage manually</button><span style="font-size:12.5px;color:var(--mut)">Enable AI sends this one record to the Claude API</span></div>
         <div id="aiErr"></div>
-        <div class="row" style="margin:10px 0 16px;font-size:12.5px;color:var(--mut)"><span>${A.chanLabel(r.channel)}</span>·<span>${A.fmtDate(r.ts)}</span></div>
-        <h4 style="margin:14px 0 8px">Source text, exactly as received</h4><div class="src">${esc(r.text)}</div>
-        <div class="callout info mt" style="font-size:12.5px">No category, no priority, no determination yet — just the words and where they came from. Click <b>Enable AI</b> to have Claude read it against the 4 ICSR criteria.</div></div>`;
+        ${manual}
+        <div class="row" style="margin:13px 0 16px;font-size:12.5px;color:var(--mut)"><span>${A.chanLabel(r.channel)}</span>·<span>${A.fmtDate(r.ts)}</span></div>
+        <h4 style="margin:14px 0 8px">Source text, exactly as received</h4><div class="src" id="rawsrc">${esc(r.text)}</div>
+        ${M ? '' : '<div class="callout info mt" style="font-size:12.5px">No category, no priority, no determination yet. Read it with AI or by hand against the 4 ICSR criteria.</div>'}</div>`;
     }
     const spans = E.CRITERIA.map(k => { const e = r.elements[k]; return e.present && e.end ? { s: e.start, e: e.end, cls: CRIT_CLS[k], id: k, tip: CRIT_LABEL[k] } : null; });
     const t = r.trace, n = Object.values(t.inputs).filter(Boolean).length;
@@ -218,20 +257,20 @@
         <div class="grid g3" style="gap:8px">${OUTCOME_CHOICES.map(([v, l]) => `<button class="chip ${d.choice === v ? 'on' : ''}" data-choice="${v}" style="width:100%;text-align:center">${l}${v === r.outcome ? ' <span style="opacity:.6">(rule)</span>' : ''}</button>`).join('')}</div>
         ${d.choice !== r.outcome ? `<div class="field mt"><label for="ovReason">Reason for overriding the rule</label><textarea id="ovReason" placeholder="Why does this differ from the rule's proposal?">${esc(d.reason || '')}</textarea></div>` : ''}
         <div class="row mt"><button class="btn" id="confirmBtn" ${d.choice !== r.outcome && !(d.reason || '').trim() ? 'disabled' : ''}>${A.ico('check')} Confirm</button><span style="font-size:12px;color:var(--mut)">Only this increases the counts above</span></div></div>`;
-    return `<div class="card fade"><div class="row"><h3>Record ${esc(r.id.slice(4))}</h3><span class="sp"></span><span class="badge b-vio">Live Claude call</span>${A.statusBadge(r)}</div>
-      <div class="row mt" style="align-items:center;gap:12px;margin-bottom:14px"><button class="btn ghost sm" id="enableAi" type="button">${A.ico('bot')} Re-run with Claude</button><span style="font-size:12.5px;color:var(--mut)">Already read live by Claude — click to ask again</span></div>
+    return `<div class="card fade"><div class="row"><h3>Record ${esc(r.id.slice(4))}</h3><span class="sp"></span>${r.readBy === 'human' ? '<span class="badge b-info">Read by reviewer · no AI</span>' : `<span class="badge b-ai">${A.ico('botai', 'width="13" height="13"')}Live Claude call</span>`}${A.statusBadge(r)}</div>
+      <div class="row mt" style="align-items:center;gap:12px;margin-bottom:14px"><button class="btn ai ghost sm" id="enableAi" type="button">${A.ico('botai')} ${r.readBy === 'human' ? 'Read with Claude' : 'Re-run with Claude'}</button><span style="font-size:12.5px;color:var(--mut)">${r.readBy === 'human' ? 'Optional second read by AI' : 'Already read live by Claude — click to ask again'}</span></div>
       <div id="aiErr"></div>
-      <div class="row" style="margin:10px 0 16px;font-size:12.5px;color:var(--mut)"><span>${A.chanLabel(r.channel)}</span>·<span>${A.fmtDate(r.ts)}</span>·<span>Proposed by <code>${esc(r.model)}</code></span>·<span>Prompt <code>${esc(r.prompt)}</code></span></div>
+      <div class="row" style="margin:10px 0 16px;font-size:12.5px;color:var(--mut)"><span>${A.chanLabel(r.channel)}</span>·<span>${A.fmtDate(r.ts)}</span>·${r.readBy === 'human' ? `<span>Criteria marked by <b>${esc(r.model.replace(/^reviewer: /, ''))}</b></span>` : `<span>Proposed by <code>${esc(r.model)}</code></span>·<span>Prompt <code>${esc(r.prompt)}</code></span>`}</div>
       <div class="row" style="margin-bottom:14px">${C.ring(n / 4, { size: 76, color: n === 4 ? 'var(--ok)' : n >= 2 ? 'var(--warn)' : 'var(--bad)', label: 'criteria met' })}<div><b>${n} of 4 criteria met</b><div style="font-size:12.5px;color:var(--mut)">${r.serious ? 'Seriousness signal detected in text' : 'No seriousness signal in text'} · priority ${Math.round(r.priority * 100)}</div></div></div>
       <h4 style="margin:14px 0 10px">Criteria and evidence</h4><div class="grid g2" style="gap:10px">${E.CRITERIA.map(k => { const e = r.elements[k]; return `<div class="crit ${e.present ? 'y' : 'n'}"><div class="ic">${e.present ? '✓' : '✗'}</div><div style="min-width:0"><b>${CRIT_LABEL[k]}</b>${e.present ? `<div class="q" data-goto="${k}" title="Click to locate in the source">“${esc(e.quote.length > 90 ? e.quote.slice(0, 90) + '…' : e.quote)}”</div><div style="font-size:11px;color:var(--mut);margin-top:3px" class="mono">chars ${e.start}–${e.end}</div>` : '<div style="font-size:12.5px;color:var(--mut)">Not found in the source text</div>'}</div></div>`; }).join('')}</div>
-      <h4 style="margin:20px 0 8px">Source text</h4><div class="legend" style="margin-bottom:8px">${E.CRITERIA.map(k => `<span><i class="${CRIT_CLS[k]}" style="background:${{ 'h-patient': '#E0D6FF', 'h-reporter': '#CFE3FF', 'h-product': '#C9F0DD', 'h-ae': '#FFD3CE' }[CRIT_CLS[k]]}"></i>${CRIT_LABEL[k]}</span>`).join('')}</div><div class="src" id="srcbox">${A.highlight(r.text, spans)}</div>
+      <h4 style="margin:20px 0 8px">Source text</h4><div class="legend" style="margin-bottom:8px">${E.CRITERIA.map(k => `<span><i class="${CRIT_CLS[k]}"></i>${CRIT_LABEL[k]}</span>`).join('')}</div><div class="src" id="srcbox">${A.highlight(r.text, spans)}</div>
       <h4 style="margin:20px 0 10px">Rule's proposal · <code>${t.rule_id} v${t.rule_set_version}</code></h4>
       <div class="list" style="gap:8px">${rows.map(([o, c, res]) => `<div class="row" style="padding:10px 14px;border-radius:14px;background:${o === r.outcome ? (o === 'valid_icsr' ? 'var(--ok-soft)' : o === 'potential_icsr' ? 'var(--warn-soft)' : 'var(--card-2)') : 'transparent'};border:1.5px solid ${o === r.outcome ? 'var(--blue)' : 'var(--line)'}"><span style="flex:1;font-size:13px">${c}</span><b style="font-size:12.5px">${res}</b>${o === r.outcome ? '<span class="badge b-info">proposed</span>' : ''}</div>`).join('')}</div>
       <div style="margin-top:14px;font-size:13.5px">${esc(t.explanation)}</div>
       <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600;font-size:13px">Input provenance (why each criterion was believed)</summary><table style="margin-top:8px;font-size:12.5px"><tbody>${E.CRITERIA.map(k => `<tr><td style="width:36%"><b>${CRIT_LABEL[k]}</b></td><td>${esc(t.input_provenance[k])}</td></tr>`).join('')}<tr><td><b>Fired rule</b></td><td><code>${esc(t.fired_rules[0])}</code></td></tr></tbody></table></details>
       <div class="row mt"><button class="btn ghost sm" id="replay">${A.ico('check')} Replay this decision</button><span style="font-size:12px;color:var(--mut)">Re-runs the rule from stored inputs</span></div><div id="rpres" style="margin-top:10px"></div>
       ${decisionBlock}
-      <div class="callout info mt" style="font-size:12.5px"><b>Reading note.</b> This record was read live by the real Claude API, right now, not a cached or offline result. It only reported facts with verbatim quotes — code then re-checked each quote actually exists in the text before it counted. Either way <b>the rule proposes, a person decides</b>: ${t.rule_id} is only a recommendation until confirmed above.</div></div>`;
+      <div class="callout info mt" style="font-size:12.5px"><b>Reading note.</b> ${r.readBy === 'human' ? 'This record was triaged by hand. Each quote was checked against the source text before it counted.' : 'This record was read live by the real Claude API, right now, not a cached or offline result. It only reported facts with verbatim quotes — code then re-checked each quote actually exists in the text before it counted.'} Either way <b>the rule proposes, a person decides</b>: ${t.rule_id} is only a recommendation until confirmed above.</div></div>`;
   }
 
   /* ======================= WORKBENCH ======================= */
@@ -246,7 +285,8 @@
     const cases = A.inbox.filter(r => r.confirmed && r.finalOutcome === 'valid_icsr');
     const W = A.wb;
     if (!cases.length) {
-      return A.shell('Case workbench', 'Only cases confirmed as Valid ICSR in the triage inbox show up here for detailed review.', `<div class="card"><div class="empty"><b>No valid ICSR cases yet</b>Open the <a href="#/inbox">triage inbox</a>, click Enable AI on a record, and confirm it as a Valid ICSR — it will appear here for detailed, field-by-field review.</div></div>`);
+      return A.shell('Case workbench', 'Only cases confirmed as Valid ICSR in the triage inbox show up here for detailed review.', (() => { const waiting = A.inbox.filter(r => !r.confirmed).sort((a, b) => String(a.ts).localeCompare(String(b.ts))); // empty state points at the next piece of work
+        return `<div class="card"><div class="empty"><b>No valid ICSR cases yet</b>${waiting.length ? `${waiting.length} record(s) are waiting for triage. Confirm one as a Valid ICSR and it appears here for field-by-field review.<div class="row" style="justify-content:center;margin-top:13px"><a class="btn" href="#/inbox?id=${waiting[0].id}">${A.ico('inbox')} Open the oldest waiting record</a></div>` : 'Confirm a record as a Valid ICSR in the triage inbox and it appears here for field-by-field review.'}</div></div>`; })());
     }
     if (!W.selId || !cases.find(c => c.id === W.selId)) W.selId = cases[0].id;
     const c = cases.find(x => x.id === W.selId);
@@ -254,7 +294,7 @@
 
     if (!c.caseAI) {
       const body = `${picker}<div class="card"><div class="row"><h3>${esc(caseLabel(c))}</h3><span class="sp"></span><span class="badge b-ok">Valid ICSR · confirmed</span></div>
-        <div class="row mt" style="align-items:center;gap:12px;margin:14px 0"><button class="btn" id="enableCaseAi" type="button">${A.ico('bot')} Enable AI</button><span style="font-size:12.5px;color:var(--mut)">Sends this case to the real Claude API for a detailed, field-by-field review</span></div>
+        <div class="row mt" style="align-items:center;gap:12px;margin:14px 0"><button class="btn ai" id="enableCaseAi" type="button">${A.ico('botai')} Enable AI</button><span style="font-size:12.5px;color:var(--mut)">Sends this case to the real Claude API for a detailed, field-by-field review</span></div>
         <div id="caseAiErr"></div>
         <h4 style="margin:14px 0 8px">What triage already confirmed</h4><div class="grid g2" style="gap:10px">${E.CRITERIA.map(k => { const e = c.elements[k]; return `<div class="crit y"><div class="ic">✓</div><div><b>${CRIT_LABEL[k]}</b><div class="q">“${esc((e.quote || '').slice(0, 90))}”</div></div></div>`; }).join('')}</div>
         <h4 style="margin:18px 0 8px">Source text</h4><div class="src">${esc(c.text)}</div>
@@ -267,8 +307,8 @@
           const errBox = document.getElementById('caseAiErr'); if (errBox) errBox.innerHTML = '';
           const out = await A.callClaudeCase(c.text);
           if (!out || !out.ok) {
-            if (errBox) errBox.innerHTML = `<div class="callout bad mt" style="font-size:12.5px"><b>Could not analyze this case.</b> ${esc((out && out.error) || 'Unknown error.')}</div>`;
-            b.disabled = false; b.innerHTML = `${A.ico('bot')} Enable AI`;
+            if (errBox) errBox.innerHTML = `<div class="callout bad mt" style="font-size:13px">${A.aiError('case', out && out.error)}</div>`;
+            b.disabled = false; b.innerHTML = `${A.ico('botai')} Enable AI`;
             return;
           }
           const fields = {};

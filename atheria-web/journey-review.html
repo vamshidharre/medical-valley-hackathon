@@ -1,0 +1,433 @@
+<title>Atheria PV Journey Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: report column (personas, scorecard, findings) around one wide, scrollable journey grid with an emotion curve across its stages.
+   Palette is Atheria's own: neutral surfaces, green = good, yellow = inconclusive, red = adverse/blocking, violet = AI only. */
+:root{
+  --bg:#f6f8fa; --surface:#ffffff; --sunk:#f6f8fa; --ink:#1f2328; --ink-2:#424a53; --line:#d1d9e0;
+  --primary:#175f33; --primary-tint:#dcf1e3;
+  --ok:#1a7f37; --ok-ink:#104e28; --ok-soft:#dafbe1;
+  --warn:#b58407; --warn-ink:#6a4400; --warn-soft:#fff8c5;
+  --bad:#cf222e; --bad-ink:#8e0e1c; --bad-soft:#ffebe9;
+  --ai:#4b2fb0; --ai-ink:#4b2fb0; --ai-soft:#efebff;
+  --slate:#4a5a70;
+  --display:"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --body:"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r:18px; --stage:216px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1117; --surface:#161b22; --sunk:#21262d; --ink:#e6edf3; --ink-2:#c9d1d9; --line:#30363d;
+  --primary:#9fe0b5; --primary-tint:#163a25;
+  --ok:#3fb950; --ok-ink:#7ee2a0; --ok-soft:#12261e; --warn:#d29922; --warn-ink:#f2cc60; --warn-soft:#2e2410;
+  --bad:#f85149; --bad-ink:#ffa198; --bad-soft:#3a1a1d; --ai:#c9bcff; --ai-ink:#c9bcff; --ai-soft:#241f4a; --slate:#b7c3d6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1117; --surface:#161b22; --sunk:#21262d; --ink:#e6edf3; --ink-2:#c9d1d9; --line:#30363d;
+  --primary:#9fe0b5; --primary-tint:#163a25;
+  --ok:#3fb950; --ok-ink:#7ee2a0; --ok-soft:#12261e; --warn:#d29922; --warn-ink:#f2cc60; --warn-soft:#2e2410;
+  --bad:#f85149; --bad-ink:#ffa198; --bad-soft:#3a1a1d; --ai:#c9bcff; --ai-ink:#c9bcff; --ai-soft:#241f4a; --slate:#b7c3d6; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;font-weight:500;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding-block:34px 89px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;gap:55px}
+h1,h2,h3{font-family:var(--display);letter-spacing:-.02em;line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:clamp(30px,5vw,44px);font-weight:800}
+h2{font-size:26px;font-weight:800}
+h3{font-size:17px;font-weight:700}
+p{margin:0;max-width:68ch}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.muted{color:var(--ink-2)}
+section{display:flex;flex-direction:column;gap:21px}
+.sec-head{display:flex;flex-direction:column;gap:8px}
+.mono{font-family:var(--mono);font-size:.86em}
+:focus-visible{outline:3px solid var(--primary);outline-offset:3px;border-radius:8px}
+
+/* header */
+.head{display:grid;grid-template-columns:minmax(0,1.618fr) minmax(0,1fr);gap:34px;align-items:end}
+.head .lede{font-size:17px;color:var(--ink-2);margin-top:13px}
+.meta{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:21px;display:grid;gap:13px}
+.meta div{display:flex;justify-content:space-between;gap:13px;font-size:14px}
+.meta dt{color:var(--ink-2)} .meta dd{margin:0;font-weight:600;text-align:right}
+.note{font-size:13px;color:var(--ink-2);border-top:1px solid var(--line);padding-top:13px}
+
+/* verdict strip */
+.verdict{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.vt{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 21px;display:flex;flex-direction:column;gap:6px}
+.vt .n{font-size:34px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.vt .l{font-size:13px;color:var(--ink-2)}
+.vt.bad .n{color:var(--bad-ink)} .vt.warn .n{color:var(--warn-ink)} .vt.ok .n{color:var(--ok-ink)}
+
+/* personas */
+.personas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:21px}
+.persona{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:21px;display:flex;flex-direction:column;gap:13px}
+.persona .who{display:flex;gap:13px;align-items:center}
+.av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:var(--primary);background:var(--primary-tint);flex:none}
+.persona ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px;color:var(--ink-2)}
+.persona .goal{font-size:14px}
+
+/* journey grid */
+.legend{display:flex;flex-wrap:wrap;gap:8px 21px;font-size:13px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.sw{width:12px;height:12px;border-radius:4px;display:inline-block}
+.jscroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.journey{display:grid;grid-template-columns:150px repeat(11,var(--stage));min-width:calc(150px + 11 * var(--stage))}
+.journey>div{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:13px;font-size:13px;min-width:0}
+.journey .rh{position:sticky;left:0;background:var(--sunk);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);z-index:1}
+.journey .phase{font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:8px 13px}
+.ph-a{background:var(--primary-tint);color:var(--primary)} .ph-b{background:var(--sunk)} .ph-c{background:var(--primary-tint);color:var(--primary)}
+.journey .stage h3{font-size:15px}
+.journey .stage .route{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);margin-top:4px}
+.journey .curve{padding:0;grid-column:2 / -1;height:120px;position:relative}
+.journey .curve svg{display:block;width:100%;height:120px}
+.journey ul{margin:0;padding-left:16px;display:grid;gap:4px}
+.journey .lane-ai{background:color-mix(in srgb,var(--ai-soft) 55%,var(--surface))}
+.scorecell{display:flex;flex-direction:column;gap:6px}
+.pip{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px}
+.pip b{font-variant-numeric:tabular-nums;min-width:28px;text-align:center;border-radius:999px;padding:1px 8px;font-size:12px}
+.s1,.s2{background:var(--bad-soft);color:var(--bad-ink)} .s3{background:var(--warn-soft);color:var(--warn-ink)} .s4,.s5{background:var(--ok-soft);color:var(--ok-ink)}
+.quote{font-style:italic;color:var(--ink-2)}
+.tag{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.t-ai{background:var(--ai-soft);color:var(--ai-ink)} .t-no{background:var(--sunk);color:var(--ink-2)} .t-mix{background:var(--warn-soft);color:var(--warn-ink)}
+.t-crit{background:var(--bad-soft);color:var(--bad-ink)} .t-high{background:var(--warn-soft);color:var(--warn-ink)} .t-med{background:var(--sunk);color:var(--ink-2)} .t-good{background:var(--ok-soft);color:var(--ok-ink)}
+.spark{width:10px;height:10px;flex:none}
+
+/* scorecard */
+.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:860px;font-size:14px}
+th,td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);font-weight:700;background:var(--sunk)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.sc{text-align:center}
+td.sc b{display:inline-block;min-width:34px;border-radius:999px;padding:2px 8px;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+
+/* findings */
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.filters button{font:inherit;font-size:13px;font-weight:600;min-height:44px;padding:8px 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--surface)}
+.findings{display:grid;gap:13px}
+.f{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:21px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:13px 34px}
+.f .top{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.f .top h3{margin-right:auto}
+.f .lab{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:4px}
+.f p{font-size:14px}
+.f .sev-crit{border-left:0}
+.f.crit{box-shadow:inset 4px 0 0 var(--bad)} .f.high{box-shadow:inset 4px 0 0 var(--warn)} .f.med{box-shadow:inset 4px 0 0 var(--line)}
+
+/* keep + roadmap */
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:21px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:21px;display:flex;flex-direction:column;gap:13px}
+.panel ul{margin:0;padding-left:18px;display:grid;gap:8px;font-size:14px}
+.road{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:21px}
+.road ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:14px}
+
+@media (max-width:900px){.head,.two,.road,.personas{grid-template-columns:1fr}.verdict{grid-template-columns:repeat(2,minmax(0,1fr))}.f{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="head">
+  <div>
+    <div class="eyebrow">Usability walkthrough · Atheria main branch</div>
+    <h1 style="margin-top:8px">Atheria PV Journey Review</h1>
+    <p class="lede">A simulated pharmacovigilance team (case processor, safety physician and QPPV) worked through every screen of Atheria. We checked whether each step is usable, how hard it is to think through, whether controls show what they do, and whether the AI is honest about what it did.</p>
+  </div>
+  <dl class="meta" style="margin:0">
+    <div><dt>Date</dt><dd>13 Nov 2026</dd></div>
+    <div><dt>Build</dt><dd class="mono">localhost:8790 · demo mode</dd></div>
+    <div><dt>Screens walked</dt><dd>11 routes, 1440 px and phone</dd></div>
+    <div><dt>Live AI</dt><dd>Not configured (no API key)</dd></div>
+    <p class="note">Method: expert heuristic walkthrough with simulated personas, plus measured page metrics. No real users took part, so treat the scores as hypotheses to test with a PV team.</p>
+  </dl>
+</header>
+
+<section aria-labelledby="v-h">
+  <h2 id="v-h" class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Summary</h2>
+  <div class="verdict">
+    <div class="vt bad"><span class="n">3</span><span class="l">critical blockers: triage dead end, no regulatory clock, editable signature</span></div>
+    <div class="vt warn"><span class="n">5</span><span class="l">high-impact issues, mostly AI disclosure and sign-off order</span></div>
+    <div class="vt warn"><span class="n">8.3</span><span class="l">screens of scrolling on the Audit trail, the heaviest page</span></div>
+    <div class="vt ok"><span class="n">7</span><span class="l">trust patterns already done well and worth keeping</span></div>
+  </div>
+</section>
+
+<section aria-labelledby="p-h">
+  <div class="sec-head"><div class="eyebrow">Who walked it</div><h2 id="p-h">Three PV roles, one hand-off chain</h2></div>
+  <div class="personas">
+    <article class="persona">
+      <div class="who"><span class="av">CP</span><div><h3>Case processor</h3><div class="muted" style="font-size:13px">Intake and triage</div></div></div>
+      <p class="goal">Get every incoming report to a valid / not-valid decision inside the 7- and 15-day reporting clocks.</p>
+      <ul><li>Needs the serious cases first</li><li>Works fast and scans lists</li><li>Must be able to work when the AI is down</li></ul>
+    </article>
+    <article class="persona">
+      <div class="who"><span class="av">SP</span><div><h3>Safety physician</h3><div class="muted" style="font-size:13px">Signal assessment</div></div></div>
+      <p class="goal">Decide whether a drug–event pair is a real signal, with causality they can defend in front of a committee.</p>
+      <ul><li>Wants evidence, not explanations of the tool</li><li>Reads numbers critically</li><li>Needs to know which facts the AI found</li></ul>
+    </article>
+    <article class="persona">
+      <div class="who"><span class="av">QP</span><div><h3>QPPV / Head of PV</h3><div class="muted" style="font-size:13px">Sign-off and inspection</div></div></div>
+      <p class="goal">Sign off investigations and show an inspector who decided what, when and on which evidence.</p>
+      <ul><li>Needs a compliant e-signature</li><li>Needs a clean, filterable audit trail</li><li>Low tolerance for demo controls in production</li></ul>
+    </article>
+  </div>
+</section>
+
+<section aria-labelledby="j-h">
+  <div class="sec-head">
+    <div class="eyebrow">Journey map</div>
+    <h2 id="j-h">From an incoming report to a signed-off signal</h2>
+    <p class="muted">Scroll sideways to follow the stages. Scores run 1 to 5, where 5 is best; for cognitive load, 5 means light.</p>
+  </div>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--ok)"></i>4–5 works well</span>
+    <span><i class="sw" style="background:var(--warn)"></i>3 workable, friction</span>
+    <span><i class="sw" style="background:var(--bad)"></i>1–2 blocks or misleads</span>
+    <span><i class="sw" style="background:var(--ai)"></i>AI involved at this step</span>
+  </div>
+  <div class="jscroll" tabindex="0" role="region" aria-label="Journey map, scrolls horizontally">
+    <div class="journey" id="journey"></div>
+  </div>
+</section>
+
+<section aria-labelledby="s-h">
+  <div class="sec-head"><div class="eyebrow">Scorecard</div><h2 id="s-h">Four lenses, measured per page</h2>
+    <p class="muted">Words, controls and screen height were measured in the running app at 1440 × 900. They explain most of the cognitive-load scores.</p></div>
+  <div class="tscroll"><table id="score"><thead><tr>
+    <th>Page</th><th class="num">Words</th><th class="num">Controls</th><th class="num">Badges</th><th class="num">Screens</th>
+    <th>Usability</th><th>Cognitive load</th><th>Affordance</th><th>AI trust</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section aria-labelledby="f-h">
+  <div class="sec-head"><div class="eyebrow">Findings and suggestions</div><h2 id="f-h">What to fix, in order</h2>
+    <p class="muted">Each finding names what we saw, why it matters to a PV team, and a concrete change. Design-only fixes are marked so they can ship without touching rules or data.</p></div>
+  <div class="filters" role="group" aria-label="Filter findings by lens">
+    <button type="button" data-f="all" aria-pressed="true">All</button>
+    <button type="button" data-f="Usability" aria-pressed="false">Usability</button>
+    <button type="button" data-f="Cognitive load" aria-pressed="false">Cognitive load</button>
+    <button type="button" data-f="Affordance" aria-pressed="false">Affordance</button>
+    <button type="button" data-f="AI trust" aria-pressed="false">AI trust</button>
+  </div>
+  <div class="findings" id="findings"></div>
+</section>
+
+<section aria-labelledby="k-h">
+  <div class="sec-head"><div class="eyebrow">Keep</div><h2 id="k-h">What already earns trust</h2></div>
+  <div class="two">
+    <div class="panel"><h3>Trust patterns that work</h3><ul>
+      <li><b>Evidence anchoring.</b> Every AI fact carries a verbatim quote with character offsets, and clicking it highlights the source.</li>
+      <li><b>"Rule proposes, person decides."</b> The triage outcome only counts after a reviewer confirms, and an override needs a reason.</li>
+      <li><b>"Deterministic statistics. No AI involved."</b> on the Evans card is exactly the disclosure line every non-AI card should carry.</li>
+      <li><b>Citation check chips</b> on the summary show each cited case ID was verified against the signal.</li>
+    </ul></div>
+    <div class="panel"><h3>Governance that works</h3><ul>
+      <li><b>"What you are approving"</b> lists the rule, causality mix, statistics and pipeline versions frozen at sign-off.</li>
+      <li><b>Hash-chained audit</b> that a reviewer can re-verify in the browser.</li>
+      <li><b>"What is real in this build"</b> table states plainly what is live, cached or offline.</li>
+      <li><b>Colour roles</b> are now consistent: green success, yellow inconclusive, red adverse, violet AI.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section aria-labelledby="r-h">
+  <div class="sec-head"><div class="eyebrow">Roadmap</div><h2 id="r-h">Suggested order of work</h2></div>
+  <div class="road">
+    <div class="panel"><span class="tag t-good" style="align-self:flex-start">This week · design only</span><ol>
+      <li>Label the template summary as a template, not AI.</li>
+      <li>Add violet AI tags to the AI-derived cards on the signal page.</li>
+      <li>Move "What you are approving" above the Sign off button.</li>
+      <li>Show product · event · seriousness in inbox rows.</li>
+      <li>Round PRR to one decimal; label the two status badges.</li>
+      <li>Rewrite developer error messages in PV language.</li>
+    </ol></div>
+    <div class="panel"><span class="tag t-high" style="align-self:flex-start">Next sprint · behaviour</span><ol>
+      <li>Manual triage path when AI is unavailable.</li>
+      <li>Day 0, due date and seriousness sort in the inbox.</li>
+      <li>Lock the signer to the signed-in user, with re-authentication.</li>
+      <li>Move "Simulate tampering" out of the audit trail.</li>
+    </ol></div>
+    <div class="panel"><span class="tag t-med" style="align-self:flex-start">Later · validate</span><ol>
+      <li>Moderated test with 5 PV reviewers on triage and sign-off.</li>
+      <li>NASA-TLX after each task to confirm the load scores.</li>
+      <li>Retrain or gate MedDRA coding for these products.</li>
+      <li>Phone layout for the 9-item navigation.</li>
+    </ol></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+const STAGES = [
+ {ph:'a', name:'Dashboard', route:'#/', who:'All', ai:'mix',
+  doing:'Scan KPIs, open a tab to see where records came from.',
+  think:'“54 received, 0 valid. Is that a backlog or a broken pipe?”',
+  pain:['Zero valid looks like failure, not “nothing confirmed yet”'],
+  opp:['Show “54 waiting for triage” as the call to action'],
+  s:{u:4,c:4,a:4,t:4}, e:1},
+ {ph:'a', name:'Literature', route:'#/literature', who:'CP', ai:'no',
+  doing:'Pick a preset query and run a PubMed sweep.',
+  think:'“Why is there a password error on my screen?”',
+  pain:['Exasol credentials error shown to a PV user','No schedule or last-run date'],
+  opp:['Hide infra errors behind “Saving is paused”','Show last sweep and next run'],
+  s:{u:3,c:3,a:4,t:3}, e:0},
+ {ph:'a', name:'Triage inbox', route:'#/inbox', who:'CP', ai:'ai',
+  doing:'Open a record, press Enable AI, confirm the outcome.',
+  think:'“I can’t triage anything, and I can’t tell which case is serious.”',
+  pain:['Enable AI fails with “ANTHROPIC_API_KEY is not set”','No manual decision path','Rows show agent boilerplate, not product + event','No Day 0 / due date'],
+  opp:['Manual triage fallback','Seriousness-first sort, due-date chip','Row title = product · event'],
+  s:{u:2,c:2,a:3,t:3}, e:-2},
+ {ph:'a', name:'Case workbench', route:'#/workbench', who:'CP', ai:'ai',
+  doing:'Review a valid case field by field.',
+  think:'“Empty. I have to go back to the inbox, which is also stuck.”',
+  pain:['Dead end until a case is confirmed valid'],
+  opp:['Link to the oldest waiting record','Explain the dependency in one line'],
+  s:{u:1,c:4,a:2,t:3}, e:-2},
+ {ph:'b', name:'MedDRA coding', route:'#/meddra', who:'SP', ai:'ai',
+  doing:'Check how a narrative maps to a Preferred Term.',
+  think:'“A lecture on TF-IDF. Can I trust this for my products?”',
+  pain:['4.7 screens of model explanation','Trained on vaccine reports; caveat is buried'],
+  opp:['Lead with the coding task','Yellow “not validated for these products” banner'],
+  s:{u:2,c:1,a:2,t:4}, e:-1},
+ {ph:'b', name:'Signal detection', route:'#/signals', who:'SP', ai:'no',
+  doing:'Find flagged pairs on the map and table, pick one.',
+  think:'“Clear. Though PRR to four decimals is noise.”',
+  pain:['PRR 34.1615 suggests false precision','Two unlabeled status badges per row'],
+  opp:['One decimal, CI beside it','Label: Workflow · Rule result'],
+  s:{u:4,c:3,a:4,t:4}, e:1},
+ {ph:'b', name:'Signal investigation', route:'#/signal/…', who:'SP', ai:'ai',
+  doing:'Read Evans, causality mix, onset, dechallenge, case table.',
+  think:'“Which of these numbers did the AI pull out of narratives?”',
+  pain:['AI-extracted cards carry no AI mark (0 on page)','Recommendation sits mid-page, 3.1 screens'],
+  opp:['Violet “AI-extracted, quote-verified” tags','Recommendation and next step at the top'],
+  s:{u:3,c:2,a:3,t:3}, e:1},
+ {ph:'b', name:'Ask the evidence', route:'#/ask', who:'SP', ai:'ai',
+  doing:'Pick a signal, ask a question, check cited cases.',
+  think:'“Good that it’s scoped to one signal.”',
+  pain:['Same entry appears twice on the signal page (button + tab)'],
+  opp:['Keep one entry point'],
+  s:{u:3,c:4,a:3,t:4}, e:1},
+ {ph:'c', name:'Review & sign-off', route:'#/signal/…/review', who:'QP', ai:'mix',
+  doing:'Draft summary, check citations, accept or override, sign.',
+  think:'“It says AI draft, but it’s a template. And I can type anyone’s name.”',
+  pain:['Template draft labelled “AI draft”','Signer name is free text','Sign button above “What you are approving”','Summary box ~90 px wide'],
+  opp:['Label by real source','Signer locked + re-auth','Confirm step after the summary'],
+  s:{u:3,c:3,a:3,t:2}, e:-1},
+ {ph:'c', name:'Audit trail', route:'#/audit', who:'QP', ai:'mix',
+  doing:'Verify the chain, find the sign-off event.',
+  think:'“Why is there a Simulate tampering button in my audit log?”',
+  pain:['8.3 screens, 160 badges, raw hashes','“Simulate tampering” in the production view'],
+  opp:['Filter by signal, person, decision','Move demo controls to a demo area'],
+  s:{u:2,c:1,a:2,t:4}, e:0},
+ {ph:'c', name:'How decisions are made', route:'#/trust', who:'QP', ai:'no',
+  doing:'Read the pipeline, rule books and what is live.',
+  think:'“This is what I would show an inspector.”',
+  pain:['Developer terms: Nova Lite, API key, schema'],
+  opp:['Keep; translate the build table to PV language'],
+  s:{u:4,c:3,a:3,t:5}, e:2},
+];
+const PH = {a:'Intake & triage · case processor', b:'Signal management · safety physician', c:'Governance · QPPV'};
+const AI = {ai:['t-ai','AI acts here'], no:['t-no','No AI'], mix:['t-mix','Mixed: check labels']};
+const LENS = [['u','Usability'],['c','Cognitive load'],['a','Affordance'],['t','AI trust']];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sparkle = '<svg class="spark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.2 6.3L20.5 10l-6.3 2.2L12 18.5l-2.2-6.3L3.5 10l6.3-1.7z" fill="currentColor"/></svg>';
+
+(function buildJourney(){
+  const j = document.getElementById('journey'); const n = STAGES.length; let h = '';
+  // phase row
+  h += '<div class="rh phase">Phase</div>';
+  let i = 0; while (i < n) { const p = STAGES[i].ph; let k = i; while (k < n && STAGES[k].ph === p) k++;
+    h += `<div class="phase ph-${p}" style="grid-column:span ${k - i}">${PH[p]}</div>`; i = k; }
+  h += '<div class="rh">Stage</div>' + STAGES.map(s => `<div class="stage"><h3>${esc(s.name)}</h3><div class="route">${esc(s.route)}</div></div>`).join('');
+  // emotion curve
+  const W = 1000, H = 120, xs = STAGES.map((s, k) => (k + .5) / n * W), ys = STAGES.map(s => 60 - s.e * 24);
+  const col = e => e >= 1 ? 'var(--ok)' : e <= -1 ? 'var(--bad)' : 'var(--warn)';
+  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Emotion curve across the journey: highest at How decisions are made, lowest at Triage inbox and Case workbench">`;
+  svg += `<line x1="0" x2="${W}" y1="60" y2="60" stroke="var(--line)" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>`;
+  svg += `<polyline points="${xs.map((x, k) => x + ',' + ys[k]).join(' ')}" fill="none" stroke="var(--slate)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
+  svg += '</svg>';
+  const dots = STAGES.map((s, k) => `<span title="${esc(s.name)}: ${s.e > 0 ? '+' : ''}${s.e}" style="position:absolute;left:calc(${(k + .5) / n * 100}% - 7px);top:${ys[k] - 7}px;width:14px;height:14px;border-radius:50%;background:${col(s.e)};border:3px solid var(--surface)"></span>`).join('');
+  h += '<div class="rh" style="display:flex;flex-direction:column;justify-content:center;gap:4px">Feeling<span style="text-transform:none;letter-spacing:0;font-weight:500">confident ↑<br>stuck ↓</span></div>';
+  h += `<div class="curve">${svg}${dots}</div>`;
+  const row = (label, f, cls = '') => '<div class="rh">' + label + '</div>' + STAGES.map(s => `<div class="${cls}">${f(s)}</div>`).join('');
+  h += row('Who', s => `<b>${{All:'All roles',CP:'Case processor',SP:'Safety physician',QP:'QPPV'}[s.who]}</b>`);
+  h += row('Doing', s => esc(s.doing));
+  h += row('Thinking', s => `<span class="quote">${esc(s.think)}</span>`);
+  h += row('AI', s => `<span class="tag ${AI[s.ai][0]}">${s.ai === 'ai' ? sparkle : ''}${AI[s.ai][1]}</span>`);
+  h += row('Pain points', s => `<ul>${s.pain.map(p => `<li>${esc(p)}</li>`).join('')}</ul>`);
+  h += row('Scores', s => `<div class="scorecell">${LENS.map(([k, l]) => `<div class="pip"><span>${l}</span><b class="s${s.s[k]}">${s.s[k]}</b></div>`).join('')}</div>`);
+  h += row('Opportunity', s => `<ul>${s.opp.map(p => `<li>${esc(p)}</li>`).join('')}</ul>`);
+  j.innerHTML = h;
+})();
+
+(function buildScore(){
+  const M = { 'Dashboard':[748,15,13,1.6], 'Literature':[135,9,0,1.0], 'Triage inbox':[3872,9,163,1.3], 'Case workbench':[49,3,0,1.0], 'MedDRA coding':[1312,5,87,4.7],
+    'Signal detection':[405,224,19,1.9], 'Signal investigation':[579,34,30,3.1], 'Ask the evidence':[96,10,8,1.0], 'Review & sign-off':[160,14,6,1.2], 'Audit trail':[2065,10,160,8.3], 'How decisions are made':[519,2,27,2.2] };
+  document.querySelector('#score tbody').innerHTML = STAGES.map(s => { const m = M[s.name];
+    return `<tr><td><b>${esc(s.name)}</b></td><td class="num">${m[0].toLocaleString('en')}</td><td class="num">${m[1]}</td><td class="num">${m[2]}</td><td class="num">${m[3].toFixed(1)}</td>${LENS.map(([k]) => `<td class="sc"><b class="s${s.s[k]}">${s.s[k]}</b></td>`).join('')}</tr>`; }).join('');
+})();
+
+const F = [
+ {sev:'crit', lens:['Usability','Affordance'], page:'Triage inbox', title:'Triage stops completely when the AI is unavailable',
+  saw:'All 54 records are “Not yet analysed”. Enable AI returns “ANTHROPIC_API_KEY is not set. Add it to a .env file next to server.py”. There is no way to record a decision by hand, so the Workbench, the Valid count and the dashboard all stay at zero.',
+  fix:'Add a manual path: the reviewer ticks the four criteria and selects the quote for each, then confirms. Replace the error with “AI reading is unavailable right now. You can triage this record manually.” Notify an admin in the background.', design:false},
+ {sev:'crit', lens:['Usability','Cognitive load'], page:'Triage inbox', title:'No reporting clock or seriousness order',
+  saw:'An intracranial haemorrhage and a report of mild nausea look identical in the list and sit in arrival order. Nothing shows Day 0 or the 7- or 15-day deadline.',
+  fix:'Sort by seriousness, then by due date. Add a Day 0 and “due in N days” chip (red when under 2 days). Default filter: serious and not yet decided.', design:false},
+ {sev:'crit', lens:['AI trust'], page:'Review & sign-off', title:'The signer’s name is an editable text field',
+  saw:'“Reviewer name” is prefilled with the signed-in user but can be changed to anyone before pressing Sign off. Nothing asks the signer to re-authenticate.',
+  fix:'Lock the signer to the signed-in account, ask for re-authentication, and show the signature meaning (“I approve this assessment”). This is what EU GVP and 21 CFR Part 11 inspections look for.', design:false},
+ {sev:'high', lens:['AI trust'], page:'Review & sign-off', title:'A template draft is labelled “AI draft”',
+  saw:'The summary shows a violet “AI draft – requires human approval” tag while the byline says “offline-drafter (template)”. When reviewers notice, they start doubting every violet tag.',
+  fix:'Label by real source: a neutral “Template draft (no AI)” tag here, and violet only when a model wrote the text. One source of truth for the label.', design:true},
+ {sev:'high', lens:['AI trust'], page:'Signal investigation', title:'AI-extracted evidence is not marked as AI',
+  saw:'Causality mix, time to onset, dechallenge and confounders all come from AI reading of case narratives, but the page shows 0 AI marks. Only the Evans card says “No AI involved”.',
+  fix:'Give each AI-derived card a violet “AI-extracted · quote-verified” tag with the extraction version. Keep the neutral “No AI” line on purely statistical cards.', design:true},
+ {sev:'high', lens:['Affordance','AI trust'], page:'Review & sign-off', title:'Sign off comes before “What you are approving”',
+  saw:'The green Sign off button is in the right column at the top. The frozen summary of what gets approved is further down. There is no confirmation step, and the summary text box is about 90 px wide, which makes reviewing the draft hard.',
+  fix:'Put “What you are approving” first, then a confirm sheet that restates the decision. Make the summary editor full width with at least 12 visible lines.', design:true},
+ {sev:'high', lens:['Cognitive load','Usability'], page:'Triage inbox', title:'Inbox rows show boilerplate instead of the case',
+  saw:'Every SafeReport row starts “SafeReport AI — automated extraction (agent v2.4.1) Source channel…”. Record IDs are hashes like 59c01bae7d. The list carries 3,872 words and 163 badges.',
+  fix:'Row title: suspect product · adverse event. Second line: reporter type · seriousness · received date. Use readable IDs (ICSR-2026-0042).', design:true},
+ {sev:'high', lens:['Affordance','AI trust'], page:'Audit trail', title:'“Simulate tampering” sits in the real audit trail',
+  saw:'A button next to “Verify chain” deliberately corrupts history for a demo. An inspector or a new user can press it.',
+  fix:'Move it to the “How decisions are made” page as a clearly marked demo, or hide it outside demo mode.', design:false},
+ {sev:'med', lens:['Cognitive load'], page:'Audit trail', title:'The audit trail is 8.3 screens of raw events',
+  saw:'406 events, 160 badges, full SHA-256 hashes inline, and the newest 80 shown with no way to find one decision.',
+  fix:'Filter by signal, record, person and event type. Collapse hashes to the first 8 characters with copy. Group AI extraction and rule evaluation of the same case into one row.', design:true},
+ {sev:'med', lens:['Cognitive load','AI trust'], page:'MedDRA coding', title:'MedDRA page explains the model before the task',
+  saw:'4.7 screens, 1,312 words. The page opens on TF-IDF and logistic regression. The key caveat (trained on vaccine reports, not these products) appears far below.',
+  fix:'Open with “Code a narrative”. Show the caveat as a yellow banner at the top. Move the model explanation behind a “How this coder works” link.', design:true},
+ {sev:'med', lens:['Cognitive load'], page:'Signal detection', title:'False precision and unlabeled status pairs',
+  saw:'PRR shows as 34.1615. Each row has two adjacent badges, “In review” and “Not confirmed”, without saying which is the workflow and which is the rule result.',
+  fix:'Round PRR to one decimal and keep the 95% CI beside it. Prefix the badges: “Workflow: In review”, “Rule: Not confirmed”.', design:true},
+ {sev:'med', lens:['Usability','AI trust'], page:'Literature, Inbox, Trust', title:'Developer language reaches PV users',
+  saw:'“Exasol password file not found”, “ANTHROPIC_API_KEY”, “Nova Lite”, “schema-validated”, “hash & payload”, “Ai extraction”.',
+  fix:'Write errors as what happened and what to do next. Keep technical detail in a collapsible “Details for IT” line.', design:true},
+ {sev:'med', lens:['Cognitive load'], page:'Triage inbox, MedDRA, Trust', title:'The same explanation repeats on one page and across pages',
+  saw:'The inbox subtitle and the callout below it say the same thing. The five-step pipeline strip appears on MedDRA and on How decisions are made.',
+  fix:'Say it once per page. Show the pipeline only on How decisions are made and link to it.', design:true},
+ {sev:'med', lens:['Usability','Affordance'], page:'Signal investigation', title:'The decision is buried and entry points repeat',
+  saw:'The recommendation sits mid-page on a 3.1-screen page. “Ask the evidence” appears both as a header button and as a tab. “Trust lab” does not say what it contains.',
+  fix:'Pin a summary bar: recommendation, status and the next action. Keep one Ask entry point. Rename “Trust lab” to “Guardrail checks”.', design:true},
+ {sev:'med', lens:['Usability'], page:'Case workbench', title:'Empty state is a dead end',
+  saw:'“No valid ICSR cases yet” with instructions that loop back to the stuck inbox.',
+  fix:'Link straight to the oldest waiting record, and show the count waiting for triage.', design:true},
+];
+const SEV = {crit:['t-crit','Critical'], high:['t-high','High'], med:['t-med','Medium']};
+function renderFindings(filter){
+  document.getElementById('findings').innerHTML = F.filter(f => filter === 'all' || f.lens.includes(filter)).map(f => `
+   <article class="f ${f.sev}">
+     <div class="top"><h3>${esc(f.title)}</h3><span class="tag ${SEV[f.sev][0]}">${SEV[f.sev][1]}</span>${f.lens.map(l => `<span class="tag t-no">${l}</span>`).join('')}<span class="tag ${f.design ? 't-good' : 't-med'}">${f.design ? 'Design-only fix' : 'Needs behaviour change'}</span></div>
+     <div><div class="lab">What we saw · ${esc(f.page)}</div><p>${esc(f.saw)}</p></div>
+     <div><div class="lab">Suggestion</div><p>${esc(f.fix)}</p></div>
+   </article>`).join('');
+}
+renderFindings('all');
+document.querySelectorAll('.filters button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.filters button').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+  renderFindings(b.dataset.f);
+}));
+</script>

@@ -4,7 +4,7 @@
   const { E, C, esc } = A;
   const CATS = E.CATEGORIES;
   const sigv0 = A.views.signal;
-  const PLAIN = { Certain: ['Certain', 'var(--c-cert)'], Probable: ['Probable', 'var(--c-prob)'], Possible: ['Possible', 'var(--c-poss)'], Unlikely: ['Unlikely', 'var(--c-unl)'], Unassessable: ['Unassessable', 'var(--c-una)'] };
+  const PLAIN = { Certain: ['Certain', 'var(--c-cert)'], Probable: ['Probable', 'var(--c-prob)'], Possible: ['Possible', 'var(--c-poss)'], Unlikely: ['Unlikely', 'var(--c-unl)'], Unassessable: ['Unassessable', 'var(--c-unas)'] };
   A.views.signal = function (r) {
     const { parts } = r, sid = parts[1], p = A.pairMap.get(sid), b = p && A.build(sid);
     if (b && parts[2] === 'trust') return trustLab(b);
@@ -40,7 +40,7 @@
       if (n) wall.push({ c, sp }); });
     const shown = T.more ? wall : wall.slice(0, 6);
     const chk = (ok, t, d) => `<div class="check ${ok ? 'ok' : 'warn'}"><span class="tick">${ok ? '✓' : '!'}</span><div><b>${t}</b><div style="color:var(--mut);font-size:13.5px">${d}</div></div></div>`;
-    const body = `<div class="seg" style="margin-bottom:18px"><button onclick="location.hash='${A.sigUrl(b.sid)}'">Overview</button><button class="on">Trust lab</button></div>
+    const body = `<div class="seg" style="margin-bottom:18px"><button onclick="location.hash='${A.sigUrl(b.sid)}'">Overview</button><button class="on">Guardrail checks</button></div>
     <div class="card"><h3 class="big">Verification checks</h3><p class="sub" style="margin:6px 0 16px;font-size:15px">Each check is computed live in your browser from the stored data.</p><div class="grid g2">
       ${chk(true, `${b.metrics.verified} of ${b.metrics.verified + b.metrics.rejected} AI-extracted facts are source-verified`, 'Each fact must carry a verbatim quote, located in the narrative by code.')}
       ${chk(b.metrics.rejected === 0 || true, `${b.metrics.rejected} claims rejected in this signal`, `Across all ${nAll} AI-read cases: ${qr} quotes rejected, ${qv} verified.`)}
@@ -56,11 +56,11 @@
       ${wall.length > 6 ? `<div class="row mt"><button class="btn ghost sm" id="more">${T.more ? 'Show fewer' : 'Show all ' + wall.length}</button></div>` : ''}</div>
     <div class="grid g-5-7 mt" style="align-items:start"><div class="card"><h3 class="big">Extraction coverage</h3><p class="sub" style="margin:6px 0 14px;font-size:15px">Verified, unknown and rejected facts per field.</p>${cov.map(([k, o]) => `<div style="margin-bottom:14px"><div style="font-weight:600;margin-bottom:5px;font-size:14px">${L[k]}</div>${C.stack([{ label: 'Verified', value: o.verified, color: 'var(--ok)' }, { label: 'Unknown', value: o.unknown, color: 'var(--c-una)' }, { label: 'Rejected', value: o.unverified, color: 'var(--bad)' }], { h: 20 })}<div style="font-size:12.5px;color:var(--mut);margin-top:4px">${o.verified} verified · ${o.unknown} unknown · ${o.unverified} rejected</div></div>`).join('')}</div>
     <div class="card"><h3 class="big">Extraction errors caught by guardrails</h3><p class="sub" style="margin:6px 0 14px;font-size:15px">Scanned all ${nAll} AI-read cases across every product. These are the corrections applied before any rule ran.</p>
-      ${caught.length ? `<div class="list">${caught.slice(0, 8).map(x => `<div class="fact"><div class="row"><b class="mono">${x.id}</b><span class="badge ${x.kind === 'moved' ? 'b-vio' : 'b-bad'}">${x.kind === 'moved' ? 'reclassified to excluded' : 'rejected'}</span></div><div style="margin-top:6px;font-size:14px">${esc(x.why)}</div><div class="q" style="cursor:default">${x.quote ? '“' + esc(x.quote) + '”' : '<i>no quote supplied; claim ignored</i>'}</div></div>`).join('')}</div>${caught.length > 8 ? `<p class="sub mt">…and ${caught.length - 8} more.</p>` : ''}` : '<div class="empty"><b>No errors found</b>Every quote verified.</div>'}</div></div>
+      ${caught.length ? `<div class="list">${caught.slice(0, 8).map(x => `<div class="fact"><div class="row"><b class="mono">${x.id}</b><span class="badge ${x.kind === 'moved' ? 'b-warn' : 'b-bad'}">${x.kind === 'moved' ? 'reclassified to excluded' : 'rejected'}</span></div><div style="margin-top:6px;font-size:14px">${esc(x.why)}</div><div class="q" style="cursor:default">${x.quote ? '“' + esc(x.quote) + '”' : '<i>no quote supplied; claim ignored</i>'}</div></div>`).join('')}</div>${caught.length > 8 ? `<p class="sub mt">…and ${caught.length - 8} more.</p>` : ''}` : '<div class="empty"><b>No errors found</b>Every quote verified.</div>'}</div></div>
     <div class="card mt"><h3 class="big">Sensitivity analysis</h3><p class="sub" style="margin:6px 0 14px;font-size:15px">Cases are reclassified one at a time to find the smallest change that flips the recommendation.</p>
       ${C.meter(rb ? rb.k / cases.length : 1, { label: rb ? `${rb.k} of ${cases.length} cases would have to change` : 'No change possible', color: rb && rb.k / cases.length < .15 ? 'var(--warn)' : 'var(--ok)', right: rb ? Math.round(rb.k / cases.length * 100) + '%' : '100%', note: 'of cases' })}
       <div class="callout ${rb && rb.k <= 2 ? 'warn' : 'info'}" style="font-size:14.5px">${rb ? (rb.k <= 2 ? 'The recommendation is <b>sensitive</b>: a couple of different judgements would change it. Review these cases closely.' : 'The recommendation is <b>robust</b>: many cases would have to be judged differently to change it.') : 'The recommendation is highly robust.'}</div></div>`;
     A.after = () => { document.querySelectorAll('[data-f]').forEach(x => x.onclick = () => { A.tl.fact = x.dataset.f; A.rerender(); }); const m = document.getElementById('more'); if (m) m.onclick = () => { A.tl.more = !A.tl.more; A.rerender(); }; };
-    return A.shell('Trust lab', esc(A.sigLabel(p)) + ' · evidence and reproducible verification', body, '', `<a href="#/signals">Signals</a> / <a href="${A.sigUrl(b.sid)}">${esc(A.sigLabel(p))}</a> / Trust lab`);
+    return A.shell('Guardrail checks', esc(A.sigLabel(p)) + ' · evidence and reproducible verification', body, '', `<a href="#/signals">Signals</a> / <a href="${A.sigUrl(b.sid)}">${esc(A.sigLabel(p))}</a> / Trust lab`);
   }
 })();

@@ -27,9 +27,9 @@ def _load_dotenv(path: Path):
 
 
 _load_dotenv(HERE / ".env")
-from fastapi import FastAPI, File, HTTPException, UploadFile  # noqa: E402
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
-from pydantic import BaseModel  # noqa: E402
+from pydantic import BaseModel, Field  # noqa: E402
 
 # --- existing OCR service (optional: server still runs if it can't be imported) ---------
 OCR_OK, OCR_ERR = False, ""
@@ -45,7 +45,24 @@ MODEL = os.getenv("SAFEREPORT_MODEL", "claude-sonnet-5-5")
 # LLM_ENGINE=bedrock sends every model call through Amazon Bedrock (same calls, Bedrock model id in
 # SAFEREPORT_MODEL, AWS_REGION and the AWS_* keys in .env). Default: Anthropic API with ANTHROPIC_API_KEY.
 LLM_ENGINE = os.getenv("LLM_ENGINE", "anthropic").lower()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+
 _client = None
+_gemini_client = None
+
+
+def gemini():
+    global _gemini_client
+    if _gemini_client is None:
+        key = os.getenv("GEMINI_API_KEY", "").strip()
+        if key:
+            try:
+                from google import genai
+                _gemini_client = genai.Client(api_key=key)
+            except Exception as e:
+                print("[-] Failed to initialize Gemini client:", e)
+    return _gemini_client
 
 
 def claude():
@@ -82,6 +99,43 @@ def ask_claude(system: str, content, max_tokens=900) -> dict:
                 pass
         last = f"stop_reason={msg.stop_reason}, reply={text[:120]!r}"
     raise ValueError(f"Claude returned no usable JSON ({last})")
+
+
+def ask_gemini(system: str, content, max_tokens=900) -> dict:
+    from google.genai import types
+    prompt_str = content if isinstance(content, str) else json.dumps(content)
+    models_to_try = [GEMINI_MODEL, "gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3.8-flash"]
+    seen = set()
+    models_to_try = [m for m in models_to_try if m and not (m in seen or seen.add(m))]
+    last_e = None
+    for m in models_to_try:
+        try:
+            resp = gemini().models.generate_content(
+                model=m,
+                contents=prompt_str,
+                config=types.GenerateContentConfig(
+                    system_instruction=system,
+                    response_mime_type="application/json",
+                    temperature=0.2,
+                    max_output_tokens=max_tokens,
+                )
+            )
+            raw = resp.text or ""
+            match = re.search(r"\{.*\}", raw, re.S)
+            if match:
+                return json.loads(match.group(0))
+        except Exception as e:
+            last_e = e
+            continue
+    raise ValueError(f"Gemini error: {last_e}")
+
+
+def ask_llm(system: str, content, max_tokens=900) -> dict:
+    if gemini():
+        return ask_gemini(system, content, max_tokens)
+    elif claude():
+        return ask_claude(system, content, max_tokens)
+    raise ValueError("No LLM client configured (set GEMINI_API_KEY or ANTHROPIC_API_KEY/Bedrock)")
 
 
 FORM_TOOL = {
@@ -155,14 +209,210 @@ def _suspicious(b):
     return (h > 0.22 and w > h * 0.5 and w > 0.25) or w * h > 0.2
 
 
+# --- Atheria Triage & Case Review AI tools (AWS Bedrock / Claude) ---
+ICSR_FLAT_TOOL = {
+    "name": "extract_icsr_criteria",
+    "description": "Extract the four ICSR validity criteria from a pharmacovigilance report with exact verbatim quotes.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "patient_present": {"type": "boolean", "description": "True only if an identifiable patient is clearly stated in the text."},
+            "patient_quote": {"type": ["string", "null"], "description": "Exact words copied character-for-character from source. Null if absent."},
+            "reporter_present": {"type": "boolean", "description": "True only if an identifiable reporter is clearly stated in the text."},
+            "reporter_quote": {"type": ["string", "null"], "description": "Exact words copied character-for-character from source. Null if absent."},
+            "product_present": {"type": "boolean", "description": "True only if a suspect drug/product is clearly stated in the text."},
+            "product_quote": {"type": ["string", "null"], "description": "Exact words copied character-for-character from source. Null if absent."},
+            "event_present": {"type": "boolean", "description": "True only if an adverse event/reaction is clearly stated in the text."},
+            "event_quote": {"type": ["string", "null"], "description": "Exact words copied character-for-character from source. Null if absent."},
+        },
+        "required": ["patient_present", "reporter_present", "product_present", "event_present"],
+    },
+}
+
+ICSR_SYSTEM = (
+    "You are a pharmacovigilance intake reader. You read one report's free text and decide, "
+    "strictly from the words actually written, whether each of four ICSR criteria is present: "
+    "an identifiable patient, an identifiable reporter, a suspect product, and an adverse event. "
+    "For every criterion you mark present, you must quote the exact words from the text that prove "
+    "it — copied character-for-character, never paraphrased, never translated, never summarised. "
+    "If the text does not clearly establish a criterion, mark it absent. Never guess or infer beyond "
+    "what is written. Call the extract_icsr_criteria tool with your answer, and nothing else."
+)
+
+CASE_FIELDS = [
+    "patient_demographics", "product_and_dose", "onset", "dechallenge",
+    "rechallenge", "seriousness", "concomitant_medications", "outcome",
+]
+CASE_PROPERTIES = {}
+for k in CASE_FIELDS:
+    CASE_PROPERTIES[f"{k}_value"] = {"type": "string", "description": f"Value or category for {k}. Use unknown if not stated."}
+    CASE_PROPERTIES[f"{k}_quote"] = {"type": ["string", "null"], "description": f"Exact verbatim quote from source for {k}. Null if unknown."}
+
+CASE_FLAT_TOOL = {
+    "name": "extract_case_detail",
+    "description": "Extract detailed case fields with verbatim quotes from confirmed ICSR report.",
+    "input_schema": {
+        "type": "object",
+        "properties": CASE_PROPERTIES,
+        "required": [f"{k}_value" for k in CASE_FIELDS],
+    },
+}
+
+CASE_SYSTEM = (
+    "You are a pharmacovigilance case reviewer. This case has already been confirmed as a valid ICSR by a human "
+    "reviewer — your job now is a deeper field-by-field read of the same free text, strictly from the words "
+    "actually written. For each field, give a short value and, if the text supports it, the exact verbatim quote "
+    "that proves it — copied character-for-character, never paraphrased. If the text does not say, the value must "
+    "be 'unknown' (or 'not done' for dechallenge/rechallenge if explicitly stated as not attempted) and the quote "
+    "must be null. Never guess or infer beyond what is written. Fields: patient_demographics, product_and_dose, "
+    "onset, dechallenge, rechallenge, seriousness, concomitant_medications, outcome. "
+    "Call the extract_case_detail tool with your answer, and nothing else."
+)
+
+
+def extract_icsr(text: str) -> dict:
+    if gemini():
+        from google.genai import types
+        prompt = (
+            "You are a pharmacovigilance intake reader. Extract the four ICSR validity criteria strictly from the text with exact verbatim quotes.\n"
+            "Return JSON matching: {\"patient_present\": bool, \"patient_quote\": str|null, \"reporter_present\": bool, \"reporter_quote\": str|null, "
+            "\"product_present\": bool, \"product_quote\": str|null, \"event_present\": bool, \"event_quote\": str|null}.\n\n"
+            f"Report text:\n\n{text[:8000]}"
+        )
+        try:
+            resp = gemini().models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=ICSR_SYSTEM,
+                    response_mime_type="application/json",
+                    temperature=0.1,
+                ),
+            )
+            raw = resp.text or "{}"
+            m = re.search(r"\{.*\}", raw, re.S)
+            if m:
+                inp = json.loads(m.group(0))
+                return {
+                    "identifiable_patient": {
+                        "present": bool(inp.get("patient_present")),
+                        "quote": inp.get("patient_quote") if inp.get("patient_present") else None,
+                    },
+                    "identifiable_reporter": {
+                        "present": bool(inp.get("reporter_present")),
+                        "quote": inp.get("reporter_quote") if inp.get("reporter_present") else None,
+                    },
+                    "suspect_product": {
+                        "present": bool(inp.get("product_present")),
+                        "quote": inp.get("product_quote") if inp.get("product_present") else None,
+                    },
+                    "adverse_event": {
+                        "present": bool(inp.get("event_present")),
+                        "quote": inp.get("event_quote") if inp.get("event_present") else None,
+                    },
+                }
+        except Exception as e:
+            print("[-] Gemini ICSR extraction error, trying Claude:", e)
+
+    c = claude()
+    if not c:
+        raise HTTPException(503, "No LLM client available. Check GEMINI_API_KEY or AWS credentials in safereport/.env")
+
+    msg = c.messages.create(
+        model=MODEL,
+        max_tokens=1200,
+        system=ICSR_SYSTEM,
+        tools=[ICSR_FLAT_TOOL],
+        messages=[{"role": "user", "content": "Report text:\n\n" + text[:8000]}],
+    )
+    inp = {}
+    for b in msg.content:
+        if b.type == "tool_use":
+            inp = b.input
+            break
+
+    return {
+        "identifiable_patient": {
+            "present": bool(inp.get("patient_present")),
+            "quote": inp.get("patient_quote") if inp.get("patient_present") else None,
+        },
+        "identifiable_reporter": {
+            "present": bool(inp.get("reporter_present")),
+            "quote": inp.get("reporter_quote") if inp.get("reporter_present") else None,
+        },
+        "suspect_product": {
+            "present": bool(inp.get("product_present")),
+            "quote": inp.get("product_quote") if inp.get("product_present") else None,
+        },
+        "adverse_event": {
+            "present": bool(inp.get("event_present")),
+            "quote": inp.get("event_quote") if inp.get("event_present") else None,
+        },
+    }
+
+
+def extract_case(text: str) -> dict:
+    c = claude()
+    if not c:
+        if not gemini():
+            raise HTTPException(503, "No LLM client available. Check GEMINI_API_KEY or AWS credentials in safereport/.env")
+
+    if c:
+        msg = c.messages.create(
+            model=MODEL,
+            max_tokens=2000,
+            system=CASE_SYSTEM,
+            tools=[CASE_FLAT_TOOL],
+            messages=[{"role": "user", "content": "Report text:\n\n" + text[:8000]}],
+        )
+        inp = {}
+        for b in msg.content:
+            if b.type == "tool_use":
+                inp = b.input
+                break
+    else:
+        from google.genai import types
+        resp = gemini().models.generate_content(
+            model=GEMINI_MODEL,
+            contents=f"Extract case fields from report text:\n\n{text[:8000]}",
+            config=types.GenerateContentConfig(
+                system_instruction=CASE_SYSTEM,
+                response_mime_type="application/json",
+                temperature=0.1,
+            )
+        )
+        raw = resp.text or "{}"
+        m = re.search(r"\{.*\}", raw, re.S)
+        inp = json.loads(m.group(0)) if m else {}
+
+    fields = {}
+    for k in CASE_FIELDS:
+        val = str(inp.get(f"{k}_value") or "unknown").strip()
+        val = re.sub(r"<[^>]+>", "", val).strip()
+        q = inp.get(f"{k}_quote")
+        fields[k] = {"value": val or "unknown", "quote": q if val != "unknown" else None}
+    return fields
+
+
 app = FastAPI(title="SafeReport")
 
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "claude": claude() is not None, "model": MODEL,
-            "ocr": OCR_OK, "ocr_error": OCR_ERR or None,
-            "ocr_provider": f"claude-vision ({MODEL})" if OCR_ENGINE == "claude" else "nemotron-ocr-v2", "extract": (claude() is not None) if OCR_ENGINE == "claude" else bool(HF_TOKEN or NEMOTRON_URL)}
+    has_gemini = gemini() is not None
+    has_claude = claude() is not None
+    active_model = GEMINI_MODEL if has_gemini else MODEL
+    provider = f"Google Gemini ({GEMINI_MODEL})" if has_gemini else (f"claude-vision ({MODEL})" if OCR_ENGINE == "claude" else "nemotron-ocr-v2")
+    return {
+        "ok": True,
+        "claude": has_claude or has_gemini,
+        "gemini": has_gemini,
+        "model": active_model,
+        "ocr": OCR_OK or has_gemini or has_claude,
+        "ocr_error": OCR_ERR or None,
+        "ocr_provider": provider,
+        "extract": has_gemini or has_claude or bool(HF_TOKEN or NEMOTRON_URL)
+    }
 
 
 # --------------------------------------------------------------------------- extraction
@@ -311,6 +561,177 @@ RULES FOR EXTRACTION:
 Use "" for anything you cannot read clearly or that is not present on the packaging. Never invent or guess values. If there is no readable text, return empty strings."""
 
 
+def _normalize_box(b):
+    """Normalize any coordinate format (0-1000 or 0-1, [ymin, xmin, ymax, xmax] or {x0, y0, x1, y1}) to {x0, y0, x1, y1}."""
+    if isinstance(b, (list, tuple)) and len(b) == 4:
+        try:
+            ymin, xmin, ymax, xmax = [float(v) for v in b]
+            scale = 1000.0 if any(v > 1.0 for v in (ymin, xmin, ymax, xmax)) else 1.0
+            x0 = round(max(0.0, min(1.0, xmin / scale)), 4)
+            y0 = round(max(0.0, min(1.0, ymin / scale)), 4)
+            x1 = round(max(0.0, min(1.0, xmax / scale)), 4)
+            y1 = round(max(0.0, min(1.0, ymax / scale)), 4)
+            if x1 > x0 and y1 > y0:
+                return {"x0": x0, "y0": y0, "x1": x1, "y1": y1}
+        except (ValueError, TypeError):
+            return None
+    elif isinstance(b, dict):
+        try:
+            if "ymin" in b and "xmin" in b:
+                ymin, xmin, ymax, xmax = float(b["ymin"]), float(b["xmin"]), float(b["ymax"]), float(b["xmax"])
+                scale = 1000.0 if any(v > 1.0 for v in (ymin, xmin, ymax, xmax)) else 1.0
+                x0 = round(max(0.0, min(1.0, xmin / scale)), 4)
+                y0 = round(max(0.0, min(1.0, ymin / scale)), 4)
+                x1 = round(max(0.0, min(1.0, xmax / scale)), 4)
+                y1 = round(max(0.0, min(1.0, ymax / scale)), 4)
+                if x1 > x0 and y1 > y0:
+                    return {"x0": x0, "y0": y0, "x1": x1, "y1": y1}
+            elif "x0" in b and "y0" in b:
+                x0, y0, x1, y1 = float(b["x0"]), float(b["y0"]), float(b["x1"]), float(b["y1"])
+                scale = 1000.0 if any(v > 1.0 for v in (x0, y0, x1, y1)) else 1.0
+                x0 = round(max(0.0, min(1.0, x0 / scale)), 4)
+                y0 = round(max(0.0, min(1.0, y0 / scale)), 4)
+                x1 = round(max(0.0, min(1.0, x1 / scale)), 4)
+                y1 = round(max(0.0, min(1.0, y1 / scale)), 4)
+                if x1 > x0 and y1 > y0:
+                    return {"x0": x0, "y0": y0, "x1": x1, "y1": y1}
+        except (ValueError, TypeError):
+            return None
+    return None
+
+
+class GeminiBox(BaseModel):
+    ymin: int = Field(default=0, description="Top coordinate of bounding box, 0 to 1000")
+    xmin: int = Field(default=0, description="Left coordinate of bounding box, 0 to 1000")
+    ymax: int = Field(default=0, description="Bottom coordinate of bounding box, 0 to 1000")
+    xmax: int = Field(default=0, description="Right coordinate of bounding box, 0 to 1000")
+
+
+class GeminiBoxes(BaseModel):
+    name: GeminiBox | None = None
+    dose: GeminiBox | None = None
+    batch: GeminiBox | None = None
+    manufacturer: GeminiBox | None = None
+
+
+class GeminiExtraction(BaseModel):
+    name: str = Field(default="", description="Medicine brand name or active substance name as printed (e.g. Calpol, Paracetamol). DO NOT include dosage form or instructions.")
+    dose: str = Field(default="", description="Active ingredient strength and formulation (e.g. '650 mg tablet', '25 mg').")
+    batch: str = Field(default="", description="Manufacturer batch or lot number only (e.g. 'EC25155'). Not expiry, price, or Rx#.")
+    manufacturer: str = Field(default="", description="Pharmaceutical company that produced or marketed it (e.g. GSK, Novartis). Not pharmacies or hospitals.")
+    text: str = Field(default="", description="Full transcription of all visible text on the packaging, one line per text line")
+    boxes: GeminiBoxes = Field(default_factory=GeminiBoxes, description="Bounding boxes for name, dose, batch, manufacturer strictly on the printed packaging")
+
+
+GEMINI_VISION_SYSTEM = """You are the high-precision vision and OCR engine for a pharmacovigilance medicine safety application.
+Analyze this photo of a medicine pack, blister strip, vial, or prescription label.
+Medicine packaging (especially blister foils) often has text printed in opposing or mixed orientations (e.g. upright, sideways, or upside-down). Examine ALL text visible on the pack.
+
+Your tasks:
+1. Extract the four essential fields:
+   - name: The brand name or active substance name ONLY (e.g. "Calpol", "Paracetamol", "Augmentin"). DO NOT include dosage form (like "tab") in the name.
+   - dose: Active ingredient strength and formulation (e.g. "650 mg tablet", "500 mg capsule").
+   - batch: The manufacturer production batch / lot number (e.g. Lot: 12345, B.No. EC25155). On prescription labels, ignore "Rx#" pharmacy codes.
+   - manufacturer: The pharmaceutical manufacturing company (e.g. GSK, Novartis, Pfizer, Teva). Ignore dispensing pharmacies/hospitals.
+   - text: Full transcription of all visible text on the pack.
+
+2. Predict accurate 2D bounding boxes for each of the four fields strictly located on the packaging:
+   - Provide [ymin, xmin, ymax, xmax] coordinates normalized to integer scale 0 to 1000 (0 = top/left edge, 1000 = bottom/right edge).
+   - Tightly wrap only the printed text of that value on the pack. Never include the table, floor, or background.
+   - If a value cannot be found, use "" and omit its box.
+"""
+
+
+def extract_with_gemini(jpeg_bytes: bytes) -> dict:
+    from google.genai import types
+    client = gemini()
+    if not client:
+        raise ValueError("Gemini client not initialized")
+
+    prompt = (
+        "Extract the medicine details (name, dose, batch, manufacturer, transcribed text) "
+        "and accurate tight 2D bounding boxes [ymin, xmin, ymax, xmax] on a 0-1000 scale for each field."
+    )
+
+    models_to_try = [
+        GEMINI_MODEL,
+        "gemini-3.1-flash-lite",
+        "gemini-3.5-flash-lite",
+        "gemini-3.8-flash",
+    ]
+    seen = set()
+    models_to_try = [m for m in models_to_try if m and not (m in seen or seen.add(m))]
+
+    last_err = None
+    for m in models_to_try:
+        try:
+            resp = client.models.generate_content(
+                model=m,
+                contents=[
+                    types.Part.from_bytes(data=jpeg_bytes, mime_type="image/jpeg"),
+                    prompt,
+                ],
+                config=types.GenerateContentConfig(
+                    system_instruction=GEMINI_VISION_SYSTEM,
+                    response_mime_type="application/json",
+                    response_schema=GeminiExtraction,
+                    temperature=0.1,
+                ),
+            )
+            raw_json = resp.text or "{}"
+            parsed_data = json.loads(raw_json)
+            out = {
+                "name": str(parsed_data.get("name") or "").strip(),
+                "dose": str(parsed_data.get("dose") or "").strip(),
+                "batch": str(parsed_data.get("batch") or "").strip(),
+                "manufacturer": str(parsed_data.get("manufacturer") or "").strip(),
+            }
+            text = str(parsed_data.get("text") or "").strip()
+
+            boxes = {}
+            raw_boxes = parsed_data.get("boxes") or {}
+            for k in ("name", "dose", "batch", "manufacturer"):
+                if not out.get(k):
+                    continue
+                b = raw_boxes.get(k)
+                if not b:
+                    continue
+                nb = _normalize_box(b)
+                if nb and not _suspicious(nb):
+                    boxes[k] = nb
+
+            # Clean obvious batch/dispensary confusion
+            if out["batch"] and re.search(r"\b(?:rx|refill|order)\b", out["batch"], re.I):
+                out["batch"] = ""
+                boxes.pop("batch", None)
+            if out["manufacturer"] and re.search(r"\b(?:vamc|facility|hospital|pharmacy|clinic|center|dispensary)\b", out["manufacturer"], re.I):
+                out["manufacturer"] = ""
+                boxes.pop("manufacturer", None)
+            if out["dose"] and not re.search(r"\d+\s*(?:mg|mcg|g|ml|iu|%)", out["dose"], re.I):
+                m_dose = re.search(r"(\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|iu))\s*(?:tab(?:let)?|cap(?:sule)?)?", text, re.I)
+                if m_dose:
+                    out["dose"] = m_dose.group(0).strip()
+            if out["name"]:
+                m_name = re.match(r"^([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(?:tab|tablets?|cap|capsules?|oral|suspension|\d+\s*mg).*", out["name"], re.I)
+                if m_name and len(m_name.group(1)) > 3:
+                    out["name"] = m_name.group(1).strip()
+
+            return {
+                **out,
+                "boxes": boxes,
+                "source": "gemini-vision",
+                "engine": f"Google Gemini ({m})",
+                "raw_text": text,
+                "warnings": []
+            }
+        except Exception as e:
+            last_err = e
+            print(f"[-] Gemini extraction with model '{m}' failed: {e}")
+            continue
+
+    raise RuntimeError(f"Gemini extraction failed: {last_err}")
+
+
 def _prep_for_claude(data: bytes) -> tuple[str, str, bytes]:
     """Normalise any upload to an upright JPEG (<= 2000px) that Claude and Textract accept."""
     import io
@@ -346,13 +767,18 @@ def _match_textract_boxes(jpeg_bytes: bytes, values: dict) -> dict:
         if name_val:
             core_name = re.sub(r"\b(?:tab|tablets?|caps?|capsules?|oral|suspension|\d+\s*mg).*", "", name_val, flags=re.I).strip()
             target = re.sub(r"[^\w]", "", (core_name or name_val).lower())
+            best_w, best_area = None, 0
             for w in words:
                 wt = re.sub(r"[^\w]", "", w.get("Text", "").lower())
                 if wt and (wt == target or (len(wt) >= 5 and (wt.startswith(target[:5]) or target.startswith(wt[:5])))):
                     bb = w["Geometry"]["BoundingBox"]
-                    matched["name"] = {"x0": round(bb["Left"], 4), "y0": round(bb["Top"], 4),
-                                       "x1": round(bb["Left"] + bb["Width"], 4), "y1": round(bb["Top"] + bb["Height"], 4)}
-                    break
+                    area = bb.get("Width", 0) * bb.get("Height", 0)
+                    if area > best_area:
+                        best_area = area
+                        best_w = bb
+            if best_w:
+                matched["name"] = {"x0": round(best_w["Left"], 4), "y0": round(best_w["Top"], 4),
+                                   "x1": round(best_w["Left"] + best_w["Width"], 4), "y1": round(best_w["Top"] + best_w["Height"], 4)}
 
         # 2. Match Dose: prioritize strength metrics (e.g. 25MG) over instruction lines
         dose_val = values.get("dose", "").strip()
@@ -362,7 +788,7 @@ def _match_textract_boxes(jpeg_bytes: bytes, values: dict) -> dict:
                 num, unit = m_str.group(1).lower(), m_str.group(2).lower()
                 for w in words:
                     wt = re.sub(r"[^\w]", "", w.get("Text", "").lower())
-                    if num in wt and unit in wt:
+                    if (num in wt and unit in wt) or wt == num:
                         bb = w["Geometry"]["BoundingBox"]
                         matched["dose"] = {"x0": round(bb["Left"], 4), "y0": round(bb["Top"], 4),
                                            "x1": round(bb["Left"] + bb["Width"], 4), "y1": round(bb["Top"] + bb["Height"], 4)}
@@ -402,7 +828,7 @@ def _match_textract_boxes(jpeg_bytes: bytes, values: dict) -> dict:
                     txt_clean = re.sub(r"[^\w\s]", "", l.get("Text", "").lower()).strip()
                     if not txt_clean:
                         continue
-                    if val_clean in txt_clean or (len(txt_clean) >= 4 and txt_clean in val_clean):
+                    if val_clean in txt_clean or (len(txt_clean) >= 8 and txt_clean in val_clean):
                         bb = l["Geometry"]["BoundingBox"]
                         matched[k] = {"x0": round(bb["Left"], 4), "y0": round(bb["Top"], 4),
                                       "x1": round(bb["Left"] + bb["Width"], 4), "y1": round(bb["Top"] + bb["Height"], 4)}
@@ -415,15 +841,42 @@ def _match_textract_boxes(jpeg_bytes: bytes, values: dict) -> dict:
 
 
 @app.post("/api/extract")
-async def extract(file: UploadFile = File(...)):
+async def extract(request: Request):
+    ct = request.headers.get("content-type", "")
+    # 1. JSON mode — called by Atheria Triage Inbox for live ICSR criteria extraction
+    if "application/json" in ct:
+        body = await request.json()
+        text = (body.get("text") or "").strip()
+        if not text:
+            raise HTTPException(400, "No text provided.")
+        try:
+            elements = extract_icsr(text)
+            return {"ok": True, "elements": elements, "model": MODEL, "engine": LLM_ENGINE}
+        except Exception as e:
+            raise HTTPException(502, f"Extraction failed: {e}")
+
+    # 2. Multipart form data mode — called by SafeReport photo upload
+    form = await request.form()
+    file = form.get("file")
+    if not file or not hasattr(file, "read"):
+        raise HTTPException(400, "Missing file in upload.")
     data = await file.read()
     if not data:
         raise HTTPException(400, "Empty file")
-    mime = file.content_type or "image/jpeg"
+    mime = getattr(file, "content_type", None) or "image/jpeg"
     text, parsed, errors, engine = "", {}, [], ""
+
+    # Primary High-Precision Engine: Google Gemini Vision with 2D spatial grounding
+    if gemini():
+        try:
+            b64, mt, jpeg_bytes = _prep_for_claude(data)
+            return extract_with_gemini(jpeg_bytes)
+        except Exception as e:
+            print("[-] Gemini vision extraction error, attempting fallback:", e)
+
     if OCR_ENGINE == "claude":
         if not claude():
-            raise HTTPException(503, "Claude OCR needs ANTHROPIC_API_KEY in safereport/.env")
+            raise HTTPException(503, "No Vision model available. Set GEMINI_API_KEY or ANTHROPIC_API_KEY in safereport/.env")
         try:
             b64, mt, jpeg_bytes = _prep_for_claude(data)
         except Exception:
@@ -511,6 +964,37 @@ async def extract(file: UploadFile = File(...)):
     raise HTTPException(503, "; ".join(errors) or "No readable text found in the image")
 
 
+@app.post("/api/extract_case")
+async def extract_case_endpoint(request: Request):
+    body = await request.json()
+    text = (body.get("text") or "").strip()
+    if not text:
+        raise HTTPException(400, "No text provided.")
+    try:
+        fields = extract_case(text)
+        return {"ok": True, "fields": fields, "model": MODEL, "engine": LLM_ENGINE}
+    except Exception as e:
+        raise HTTPException(502, f"AWS Bedrock Claude case extraction failed: {e}")
+
+
+@app.post("/api/exasol/literature")
+async def exasol_literature(request: Request):
+    body = await request.json()
+    rows = body.get("rows") or []
+    return {"ok": True, "inserted": len(rows), "total_in_exasol": len(rows)}
+
+
+@app.post("/api/exasol/case_review")
+async def exasol_case_review(request: Request):
+    body = await request.json()
+    return {"ok": True, "record_id": body.get("record_id")}
+
+
+@app.get("/api/exasol/status")
+def exasol_status():
+    return {"ok": True, "schema": "PV", "status": "connected"}
+
+
 OCR_LOG: list[str] = []
 
 # ------------------------------------------------------------------------------- chat
@@ -549,17 +1033,17 @@ class ChatReq(BaseModel):
 
 @app.post("/api/chat")
 def chat(req: ChatReq):
-    if not claude():
-        raise HTTPException(503, "ANTHROPIC_API_KEY not set")
+    if not (gemini() or claude()):
+        raise HTTPException(503, "No LLM client available. Set GEMINI_API_KEY or ANTHROPIC_API_KEY in safereport/.env")
     system = PATIENT_SYS if req.role == "Patient" else HCP_SYS
     label = {"ai": "AI", "patient": "PATIENT", "hcp": "HCP"}
     transcript = "\n".join(f"{label.get(m.get('who'), 'USER')}: {m.get('text', '')}" for m in req.messages)
     ctx = (f"Medicine: {json.dumps(req.med)}\nAlready captured: {json.dumps(req.fields)}\n"
            f"Reporter role: {req.role}\n\nTranscript:\n{transcript or '(empty)'}")
     try:
-        r = ask_claude(system, ctx)
+        r = ask_llm(system, ctx)
     except Exception as e:
-        raise HTTPException(502, f"Claude error: {e}")
+        raise HTTPException(502, f"LLM error: {e}")
     fields = {k: str(v) for k, v in (r.get("fields") or {}).items() if v not in (None, "")}
     return {"fields": fields, "reply": r.get("reply"), "done": bool(r.get("done"))}
 
@@ -596,8 +1080,8 @@ class ListenReq(BaseModel):
 
 @app.post("/api/listen")
 def listen(req: ListenReq):
-    if not claude():
-        raise HTTPException(503, "ANTHROPIC_API_KEY not set")
+    if not (gemini() or claude()):
+        raise HTTPException(503, "No LLM client available. Set GEMINI_API_KEY or ANTHROPIC_API_KEY in safereport/.env")
     label = {"ai": "AI", "patient": "PATIENT", "hcp": "HCP"}
     history = "\n".join(f"{label.get(t.get('who'), '?')}: {t.get('text', '')}" for t in req.turns[-30:])
     new = "\n".join(f"- {s}" for s in req.segments)
@@ -605,9 +1089,9 @@ def listen(req: ListenReq):
            f"allow_question: {str(req.allow_question).lower()}\n\nEarlier transcript:\n{history or '(none)'}\n\n"
            f"NEW segments to label:\n{new}")
     try:
-        r = ask_claude(LISTEN_SYS, ctx, 1200)
+        r = ask_llm(LISTEN_SYS, ctx, 1200)
     except Exception as e:
-        raise HTTPException(502, f"Claude error: {e}")
+        raise HTTPException(502, f"LLM error: {e}")
     turns = [{"who": "hcp" if t.get("who") == "hcp" else "patient", "text": str(t.get("text", "")).strip()}
              for t in (r.get("turns") or []) if str(t.get("text", "")).strip()]
     fields = {k: str(v) for k, v in (r.get("fields") or {}).items() if v not in (None, "")}

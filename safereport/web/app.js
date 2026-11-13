@@ -1307,7 +1307,7 @@ function parseQR(raw) {
 
 /* ---------- boot ---------- */
 (async function boot() {
-  try { const r = await fetch('/api/health', { cache: 'no-store' }); if (r.ok) { const h = await r.json(); S.live = !!h.claude; S.canExtract = !!h.extract; S.ocrName = h.ocr_provider || ''; } } catch { /* offline demo mode */ }
+  try { const r = await fetch('/api/health', { cache: 'no-store' }); if (r.ok) { const h = await r.json(); S.live = !!(h.claude || h.gemini); S.canExtract = !!h.extract; S.ocrName = h.ocr_provider || ''; } } catch { /* offline demo mode */ }
   const tick = () => { const c = $('#clock'); if (c) c.textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(/\s?[AP]M/i, ''); };
   tick(); setInterval(tick, 30000);
   go('welcome');   // every launch opens on the capsule animation
