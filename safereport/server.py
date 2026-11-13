@@ -23,7 +23,7 @@ def _load_dotenv(path: Path):
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)
                 if v.strip():
-                    os.environ.setdefault(k.strip(), v.strip().strip('"'))
+                    os.environ[k.strip()] = v.strip().strip('"')
 
 
 _load_dotenv(HERE / ".env")
@@ -42,14 +42,28 @@ except Exception as e:  # pragma: no cover
     OCR_ERR = str(e)
 
 MODEL = os.getenv("SAFEREPORT_MODEL", "claude-sonnet-5-5")
+# LLM_ENGINE=bedrock sends every model call through Amazon Bedrock (same calls, Bedrock model id in
+# SAFEREPORT_MODEL, AWS_REGION and the AWS_* keys in .env). Default: Anthropic API with ANTHROPIC_API_KEY.
+LLM_ENGINE = os.getenv("LLM_ENGINE", "anthropic").lower()
 _client = None
 
 
 def claude():
     global _client
-    if _client is None and os.getenv("ANTHROPIC_API_KEY"):
-        import anthropic
-        _client = anthropic.Anthropic(timeout=40)
+    if _client is None:
+        if LLM_ENGINE == "bedrock":
+            if os.getenv("AWS_ACCESS_KEY_ID") and os.getenv("AWS_SECRET_ACCESS_KEY"):
+                import anthropic
+                _client = anthropic.AnthropicBedrock(
+                    aws_region=os.getenv("AWS_REGION", "us-east-1"),
+                    aws_access_key=os.getenv("AWS_ACCESS_KEY_ID"),
+                    aws_secret_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+                    aws_session_token=os.getenv("AWS_SESSION_TOKEN"),
+                    timeout=40,
+                )
+        elif os.getenv("ANTHROPIC_API_KEY"):
+            import anthropic
+            _client = anthropic.Anthropic(timeout=40)
     return _client
 
 
@@ -466,5 +480,163 @@ def listen(req: ListenReq):
     return {"turns": turns, "fields": fields, "question": r.get("question") or None, "done": bool(r.get("done"))}
 
 
+# --------------------------------------------------------------------------- Atheria: Exasol
+class ReportReq(BaseModel):
+    drug: str
+    event_term: str
+    age: int | None = None
+    sex: str | None = None
+    serious: bool = False
+    country: str = "DE"
+    narrative: str | None = None
+    reporter: dict | None = None
+    med: dict | None = None
+    fields: dict | None = None
 
+
+@app.post("/api/report")
+def submit_report(req: ReportReq):
+    import datetime
+    import hashlib
+
+    try:
+        sys.path.insert(0, str(HERE.parent / "db"))
+        from load_exasol import connect
+        conn = connect()
+        try:
+            # 1. Determine new sequential report ID
+            count_sr = conn.execute("SELECT COUNT(*) FROM PV.REPORTS WHERE report_source = 'safereport'").fetchval()
+            report_id = f"SR-{(count_sr + 1):04d}"
+
+            # 2. Prepare extraction metadata
+            extraction_data = {
+                "reporter": req.reporter or {},
+                "med": req.med or {},
+                "fields": req.fields or {},
+                "model": MODEL,
+                "engine": LLM_ENGINE,
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            }
+            extraction_json = json.dumps(extraction_data, ensure_ascii=False)
+
+            # 3. Insert report into PV.REPORTS
+            conn.execute("""
+                INSERT INTO PV.REPORTS (
+                    report_id, drug, event_term, age, sex, serious, country, received_date, narrative, extraction_json, report_source
+                ) VALUES (
+                    {report_id}, {drug}, {event_term}, {age}, {sex}, {serious}, {country}, CURRENT_DATE, {narrative}, {extraction_json}, 'safereport'
+                )
+            """, {
+                "report_id": report_id,
+                "drug": req.drug or "Unknown",
+                "event_term": req.event_term or "Unspecified adverse reaction",
+                "age": req.age,
+                "sex": (req.sex or "").upper()[:1] or None,
+                "serious": req.serious,
+                "country": (req.country or "DE").upper()[:2],
+                "narrative": req.narrative or "",
+                "extraction_json": extraction_json,
+            })
+
+            # 4. Append audit record to PV.AUDIT maintaining the cryptographic chain
+            last_audit = conn.execute("SELECT seq, event_hash FROM PV.AUDIT ORDER BY seq DESC LIMIT 1").fetchone()
+            prev_seq = int(last_audit[0]) if last_audit else 0
+            prev_hash = str(last_audit[1]) if last_audit else ("0" * 64)
+            new_seq = prev_seq + 1
+
+            ts = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            event_type = "REPORT_SUBMITTED"
+            actor = (req.reporter or {}).get("name") or "SafeReport User"
+
+            payload_obj = {
+                "action": "submitted",
+                "drug": req.drug or "Unknown",
+                "event_term": req.event_term or "Unspecified adverse reaction",
+                "report_id": report_id,
+                "reporter_role": (req.reporter or {}).get("role", "patient"),
+                "source": "safereport",
+            }
+            payload_str = json.dumps(payload_obj, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
+            msg = prev_hash + '{"actor":' + json.dumps(actor) + ',"payload":' + payload_str + ',"ts":' + json.dumps(ts) + ',"type":' + json.dumps(event_type) + '}'
+            new_hash = hashlib.sha256(msg.encode("utf-8")).hexdigest()
+
+            conn.execute("""
+                INSERT INTO PV.AUDIT (seq, ts, event_type, actor, payload_json, prev_hash, event_hash)
+                VALUES ({seq}, {ts}, {event_type}, {actor}, {payload_json}, {prev_hash}, {event_hash})
+            """, {
+                "seq": new_seq,
+                "ts": ts,
+                "event_type": event_type,
+                "actor": actor,
+                "payload_json": payload_str,
+                "prev_hash": prev_hash,
+                "event_hash": new_hash,
+            })
+        finally:
+            conn.close()
+    except Exception as e:
+        raise HTTPException(500, f"Exasol insertion failed: {e}")
+
+    return {"ok": True, "report_id": report_id, "exasol": True}
+
+
+@app.get("/api/pv/reports")
+def pv_reports(source: str | None = None):
+    try:
+        sys.path.insert(0, str(HERE.parent / "db"))
+        from load_exasol import connect
+        conn = connect()
+        try:
+            sql = "SELECT report_id, drug, event_term, age, sex, serious, country, received_date, narrative, report_source FROM PV.REPORTS"
+            if source:
+                sql += f" WHERE report_source = '{source}'"
+            sql += " ORDER BY received_date DESC, report_id DESC"
+            rows = conn.execute(sql).fetchall()
+        finally:
+            conn.close()
+    except Exception as e:
+        raise HTTPException(503, f"Exasol not reachable: {e}")
+    return {
+        "count": len(rows),
+        "reports": [
+            {
+                "report_id": r[0], "drug": r[1], "event_term": r[2], "age": int(r[3]) if r[3] else None,
+                "sex": r[4], "serious": bool(r[5]), "country": r[6], "received_date": str(r[7]),
+                "narrative": r[8], "source": r[9]
+            } for r in rows
+        ]
+    }
+
+
+# Signal statistics are computed by the PV.SIGNALS view in Exasol (created by db/load_exasol.py).
+SIGNALS_QUERY = ("SELECT signal_id, drug, event_term, a, b, c, d, prr, ror, ror_lo, ror_hi, chi2, is_signal "
+                 "FROM PV.SIGNALS ORDER BY prr DESC, signal_id")
+
+
+@app.get("/api/pv/signals")
+def pv_signals():
+    try:
+        sys.path.insert(0, str(HERE.parent / "db"))
+        from load_exasol import connect
+        conn = connect()
+        try:
+            rows = conn.execute(SIGNALS_QUERY).fetchall()
+            view_sql = conn.execute("SELECT view_text FROM EXA_ALL_VIEWS "
+                                    "WHERE view_schema = 'PV' AND view_name = 'SIGNALS'").fetchval()
+            n_reports = conn.execute("SELECT COUNT(*) FROM PV.REPORTS").fetchval()
+        finally:
+            conn.close()
+    except Exception as e:
+        raise HTTPException(503, f"Exasol not reachable: {e}")
+    num = lambda v: float(v) if v is not None else None
+    return {
+        "source": "exasol", "query": SIGNALS_QUERY, "view_sql": view_sql, "reports": int(n_reports),
+        "rows": [{"signal_id": r[0], "drug": r[1], "event": r[2], "a": int(r[3]), "b": int(r[4]), "c": int(r[5]),
+                  "d": int(r[6]), "prr": num(r[7]), "ror": num(r[8]), "ror_lo": num(r[9]), "ror_hi": num(r[10]),
+                  "chi2": num(r[11]), "is_signal": bool(r[12])} for r in rows],
+    }
+
+
+# The safety team's portal, served from the same server so it can call /api/pv/*.
+app.mount("/atheria", StaticFiles(directory=HERE.parent / "PV Teams" / "atheria-web", html=True), name="atheria")
 app.mount("/", StaticFiles(directory=HERE / "web", html=True), name="web")

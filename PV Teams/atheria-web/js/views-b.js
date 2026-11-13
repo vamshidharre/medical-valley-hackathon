@@ -16,6 +16,7 @@
       <div class="card kpi"><div class="lb">Flagged by Evans</div><div class="v" style="color:var(--blue)">${A.flagged.length}</div><div class="ft">PRR ≥ 2 · χ² ≥ 4 · cases ≥ 3</div></div>
       <div class="card kpi"><div class="lb">Investigated</div><div class="v">${inv}</div><div class="ft">AI-read, rule-assessed</div></div>
       <div class="card kpi"><div class="lb">Awaiting sign-off</div><div class="v" style="color:var(--warn)">${Object.values(A.invState).filter(s => s.status === 'in_review').length}</div><div class="ft">human approval needed</div></div></div>
+    ${sourceCard()}
     <div class="grid g-7-5 mt" style="align-items:start"><div class="card"><div class="hd"><div><h3>Signal map</h3><div class="sub">Pairs in the blue zone meet all three Evans criteria. Bubble size shows χ².</div></div></div>${C.bubble(A.pairs.filter(p => !U.drug || p.drug === U.drug), { href: s => A.sigUrl(s.signal_id) })}</div>
       <div class="card"><div class="hd"><div><h3>Drug × event heat map</h3><div class="sub">Numbers are case counts. Blue outlined cells are flagged signals; darker means higher PRR.</div></div></div>${C.heat(A.drugs, A.events, (d, e) => A.pairMap.get(d + '__' + e), { href: c => A.sigUrl(c.signal_id) })}</div></div>
     <div class="card mt"><div class="row" style="margin-bottom:16px"><button class="chip ${!U.drug ? 'on' : ''}" data-d="">All drugs</button>${A.drugs.map(d => `<button class="chip ${U.drug === d ? 'on' : ''}" data-d="${d}">${d}</button>`).join('')}<span class="sp"></span><div class="seg"><button data-all="0" class="${!U.all ? 'on' : ''}">Flagged only</button><button data-all="1" class="${U.all ? 'on' : ''}">All pairs</button></div></div>
@@ -32,6 +33,19 @@
     };
     return A.shell('Signal detection', 'Statistics detect candidate signals across every drug–event pair. Pick one to investigate.', body);
   };
+  // Where the numbers come from: Exasol SQL, cross-checked against the independent browser calculation.
+  function sourceCard() {
+    const s = A.signalSource;
+    if (s.db !== 'exasol') return `<div class="callout warn mt" style="font-size:12.5px"><b>Computed in your browser.</b> The Exasol database was not reachable${s.error ? ` (${esc(s.error)})` : ''}, so these statistics come from the built-in copy of the data. Start Atheria through the server (<span class="mono">/atheria</span>) to compute them in Exasol.</div>`;
+    const allAgree = s.agree === s.total && s.total === s.browserTotal;
+    return `<div class="card mt"><div class="hd"><div><h3>Where these numbers come from</h3><div class="sub">Computed by SQL in the Exasol database over ${s.reports.toLocaleString()} reports in <span class="mono">PV.REPORTS</span>. Fixed formulas, no AI.</div></div><span class="badge b-info">Exasol · PV.SIGNALS</span></div>
+      <div class="callout ${allAgree ? 'ok' : 'warn'}" style="font-size:12.5px">${allAgree
+        ? `<b>Cross-check passed.</b> An independent calculation in your browser gives the same counts, PRR, ROR, χ² and verdict for all ${s.total} drug–event pairs.`
+        : `<b>Cross-check: ${s.agree} of ${s.total} pairs agree</b> with the browser calculation (browser has ${s.browserTotal} pairs). The database may hold reports the browser copy does not, for example new SafeReport submissions. The database figures are shown.`}</div>
+      <details class="mt"><summary style="cursor:pointer;font-size:13px"><b>Show the SQL</b></summary>
+        <div class="sub mt">Query run for this page:</div><pre class="mono" style="white-space:pre-wrap;font-size:12px;margin:6px 0 12px">${esc(s.query)}</pre>
+        <div class="sub">Definition of the view <span class="mono">PV.SIGNALS</span>, read from the database:</div><pre class="mono" style="white-space:pre-wrap;font-size:12px;margin:6px 0 0">${esc(s.viewSql)}</pre></details></div>`;
+  }
   const STEPS = ['Statistics', 'AI extraction', 'Guardrails verify quotes', 'Rules decide', 'Ready for review'];
   A.runInvestigate = async function (sid) {
     if (A.invState[sid]) { location.hash = A.sigUrl(sid); return; }

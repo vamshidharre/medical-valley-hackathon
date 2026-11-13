@@ -40,11 +40,11 @@
   A.inbox = LS.get('inbox', []);
   A.persistInbox = () => LS.set('inbox', A.inbox);
   A.triage = function (text, channel, meta = {}) {
-    const hash = E.sha256(text);
-    const dup = A.inbox.find(r => r.hash === hash);
+    const hash = E.sha256(text + (meta.report_id ? ':' + meta.report_id : ''));
+    const dup = A.inbox.find(r => (meta.report_id && (r.id === meta.report_id || (r.meta && r.meta.report_id === meta.report_id))) || (!meta.report_id && r.hash === hash));
     if (dup) return { duplicate: true, record: dup };
     const read = E.readSource(text), v = E.evaluateValidity(read.elements);
-    const rec = { id: 'src_' + hash.slice(0, 10), hash, channel, text, ts: new Date().toISOString(), meta, elements: read.elements, outcome: v.outcome, trace: v.trace,
+    const rec = { id: meta.report_id || ('src_' + hash.slice(0, 10)), hash, channel, text, ts: new Date().toISOString(), meta, elements: read.elements, outcome: v.outcome, trace: v.trace,
       priority: E.priority(read.elements, read.seriousness_signal), serious: read.seriousness_signal, model: 'offline-reader-1', prompt: 'triage_icsr v1.0', products: read.products, ae: read.ae_candidates, sample: !!meta.sample };
     A.inbox.unshift(rec);
     A.auditAdd('ai_triage_proposal', 'system', { source_record_id: rec.id, model_id: rec.model, prompt_version: rec.prompt, criteria: v.trace.inputs, content_sha256: hash }, false);
@@ -175,6 +175,10 @@
     const { parts } = parse();
     if (!A.user) { appEl.innerHTML = A.loginView(); document.getElementById('lf').onsubmit = e => { e.preventDefault(); A.user = { name: document.getElementById('ln').value.trim() || 'Reviewer', role: document.getElementById('lr').value }; LS.set('user', A.user); location.hash = '#/'; render(); }; return; }
     const key = parts[0] || 'dashboard';
+    if (key === 'inbox' || key === 'dashboard' || key === 'signals') {
+      await A.loadDbReports();
+      if (key === 'signals' || key === 'dashboard') await A.loadDbSignals();
+    }
     const fn = A.views[key] || A.views.dashboard;
     let html; try { html = await fn(parse()); } catch (err) { console.error(err); html = A.shell('Something went wrong', '', `<div class="card"><div class="callout bad">${esc(err.message)}</div></div>`); }
     appEl.innerHTML = html;
@@ -186,5 +190,34 @@
   A.render = render;
   window.addEventListener('hashchange', render);
   C.tipInit();
-  A.start = () => { if (!location.hash) location.hash = '#/'; render(); };
+  /* ---------- signal statistics from Exasol (when served by safereport/server.py) ---------- */
+  // Browser engine numbers stay as an independent cross-check; if Exasol is not reachable they are used as before.
+  A.signalSource = { db: 'browser' };
+  A.loadDbSignals = async function () {
+    try {
+      const ctl = new AbortController(); setTimeout(() => ctl.abort(), 4000);
+      const res = await fetch('/api/pv/signals', { signal: ctl.signal });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || 'HTTP ' + res.status);
+      const j = await res.json(), browser = A.pairMap;
+      const keys = ['a', 'b', 'c', 'd', 'prr', 'ror', 'ror_lo', 'ror_hi', 'chi2'];
+      const agree = j.rows.filter(r => { const p = browser.get(r.signal_id); return p && p.is_signal === r.is_signal && keys.every(k => Math.abs(p[k] - r[k]) < 1e-3); }).length;
+      A.pairs = j.rows.slice().sort((x, y) => y.prr - x.prr || (x.signal_id < y.signal_id ? -1 : 1));
+      A.pairMap = new Map(A.pairs.map(p => [p.signal_id, p]));
+      A.flagged = A.pairs.filter(p => p.is_signal);
+      A.signalSource = { db: 'exasol', query: j.query, viewSql: j.view_sql, reports: j.reports, agree, total: j.rows.length, browserTotal: browser.size };
+    } catch (e) { A.signalSource = { db: 'browser', error: String(e.message || e) }; }
+  };
+  A.loadDbReports = async function () {
+    try {
+      const res = await fetch('/api/pv/reports?source=safereport');
+      if (!res.ok) return;
+      const j = await res.json();
+      for (const r of (j.reports || [])) {
+        if (r.narrative && !A.inbox.some(x => x.id === r.report_id || (x.meta && x.meta.report_id === r.report_id))) {
+          A.triage(r.narrative, 'safereport', { report_id: r.report_id, drug: r.drug, event: r.event_term, live_db: true });
+        }
+      }
+    } catch (e) { /* ignore */ }
+  };
+  A.start = async () => { if (!location.hash) location.hash = '#/'; await A.loadDbSignals(); await A.loadDbReports(); render(); };
 })(window);

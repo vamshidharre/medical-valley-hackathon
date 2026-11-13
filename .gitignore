@@ -1,0 +1,6 @@
+# Secrets and local environments: never commit
+.env
+*.env
+!*.env.example
+.venv/
+__pycache__/

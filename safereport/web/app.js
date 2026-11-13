@@ -562,12 +562,13 @@ function mockAI(text, who) {
 /* ---------- 5. review ---------- */
 const medLabel = m => m.dose && !m.dose.toLowerCase().includes(m.name.trim().toLowerCase()) ? `${m.name} ${m.dose}` : (m.dose || m.name);
 function narrative() {
-  const f = S.fields, m = S.med;
+  const f = S.fields, m = S.med, p = S.profile || {};
   if (!f.reaction) return S.msgs.filter(x => !x.sys && x.who !== 'ai').map(x => x.text).join(' ');
   const who = [f.age && f.age.replace(/^(\d+) years?$/, '$1-year-old'), f.sex && f.sex.toLowerCase()].filter(Boolean).join(' ');
   const pt = (who ? 'A ' + who + ' patient' : 'A patient') + (f.initials ? ' (' + f.initials + ')' : '');
   const ev = f.reaction.charAt(0).toLowerCase() + f.reaction.slice(1);
-  return `${pt} experienced ${ev}${f.onset ? ' (onset: ' + f.onset + ')' : ''} while taking ${medLabel(m)}${m.batch ? ' (batch ' + m.batch + ')' : ''}. `
+  const repLine = (p.name && p.name.trim()) ? `Reporter: ${p.name.trim()} (${p.role || 'Patient'}).\n` : '';
+  return `${repLine}${pt} experienced ${ev}${f.onset ? ' (onset: ' + f.onset + ')' : ''} while taking ${medLabel(m)}${m.batch ? ' (batch ' + m.batch + ')' : ''}. `
     + `${f.severity ? 'Severity: ' + f.severity + '. ' : ''}${f.action ? f.action + '. ' : ''}${f.outcome ? 'Outcome: ' + f.outcome + '. ' : ''}${f.otherMeds ? 'Other medicines: ' + f.otherMeds + '.' : ''}`.trim();
 }
 /* The four things a report needs to be processable as a valid case */
@@ -771,9 +772,34 @@ const actions = {
   fchip: t => answerFollow(t.dataset.v),
   toReview: () => { S.consent = false; S.edit = { rep: false, ev: false }; go('review'); },
   submit: async t => {
-    t.disabled = true; t.innerHTML = '<span class="pulse" style="width:22px;height:22px;border-width:3px;margin:0"></span> Submitting…';
-    await sleep(1300);
-    const id = 'SR-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 1e6)).padStart(6, '0');
+    t.disabled = true; t.innerHTML = '<span class="pulse" style="width:22px;height:22px;border-width:3px;margin:0"></span> Submitting to Exasol…';
+    let id = 'SR-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 1e6)).padStart(6, '0');
+    try {
+      const payload = {
+        drug: (S.med.name || 'Unknown').trim(),
+        event_term: (S.fields.reaction || 'Unspecified adverse reaction').trim(),
+        age: parseInt(S.fields.age, 10) || null,
+        sex: (S.fields.sex || '').toUpperCase().slice(0, 1) || null,
+        serious: /hospital|death|life-threat|disab|severe/i.test((S.fields.severity || '') + ' ' + (S.narr || '')),
+        country: (S.profile.country || 'DE').toUpperCase().slice(0, 2),
+        narrative: (S.narr || '').trim(),
+        reporter: S.profile,
+        med: S.med,
+        fields: S.fields,
+      };
+      const res = await fetch('/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const j = await res.json();
+        if (j.report_id) id = j.report_id;
+      }
+    } catch (e) {
+      console.warn('Exasol submit failed, falling back to local ID:', e);
+    }
+    await sleep(600);
     S.report = { id, times: [clock()] }; S.stage = 1; S.notified = false; S.sealed = false;
     S.follow = []; S.followIdx = 0;
     S.timers.forEach(clearTimeout);
