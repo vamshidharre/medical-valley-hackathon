@@ -1,6 +1,6 @@
-# Medical Valley Hackathon
+# Team Sovereign Health · Medical Valley Hackathon
 
-Team submission for the [Healthcare Hackathon Bayern, Erlangen](https://hackathon.medical-valley-emn.de/#challenges).
+Official team submission by **Sovereign Health** for the [Healthcare Hackathon Bayern, Erlangen](https://hackathon.medical-valley-emn.de/#challenges).
 
 ## Challenge
 
