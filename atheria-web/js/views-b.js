@@ -8,208 +8,20 @@
 
   /* ======================= SIGNALS ======================= */
   A.sigUI = A.sigUI || { drug: '', all: false };
-
-  A.showContingencyModal = function (target) {
-    const p = typeof target === 'string' ? A.pairMap.get(target) : target;
-    if (!p) return;
-    const ov = document.createElement('div');
-    ov.style.cssText = 'position:fixed;inset:0;background:rgba(10,16,30,.7);z-index:99;display:grid;place-items:center;padding:20px;backdrop-filter:blur(5px);overflow-y:auto';
-
-    const N = p.a + p.b + p.c + p.d;
-    const row1 = p.a + p.b;
-    const row2 = p.c + p.d;
-    const col1 = p.a + p.c;
-    const col2 = p.b + p.d;
-
-    ov.innerHTML = `
-      <div class="card" style="width:min(820px,100%);max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.35)">
-        <div class="hd" style="border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:18px">
-          <div>
-            <div class="row" style="gap:8px;margin-bottom:4px">
-              <span class="badge b-ok">⚡ In-Memory SQL: ~4 ms</span>
-              <span class="badge b-info">Exasol Sovereign DB</span>
-              <span class="badge b-vio">FDA / EMA Evans Standard</span>
-            </div>
-            <h3 style="font-size:20px;letter-spacing:-.02em">2×2 Contingency Table &amp; Disproportionality Derivation</h3>
-            <div class="sub">Suspect Drug: <b>${esc(p.drug)}</b> · Adverse Event: <b>${esc(p.event)}</b></div>
-          </div>
-          <button class="btn ghost sm" id="modalClose" style="font-size:18px;line-height:1;padding:6px 12px">✕</button>
-        </div>
-
-        <div style="font-size:13px;color:var(--ink-2);margin-bottom:16px">
-          Pharmacovigilance quantitative safety signals are evaluated using 2×2 contingency tables calculated directly in the <b>Exasol in-memory engine</b> using analytic window functions over all <b>${N.toLocaleString()}</b> adverse event records.
-        </div>
-
-        <!-- 2x2 Table -->
-        <div class="scroll" style="margin-bottom:20px">
-          <table style="border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card-2)">
-            <thead>
-              <tr style="background:var(--card)">
-                <th style="border-bottom:2px solid var(--line)">Contingency Matrix</th>
-                <th class="num" style="border-bottom:2px solid var(--line);color:var(--blue)">Target Event: ${esc(p.event)}</th>
-                <th class="num" style="border-bottom:2px solid var(--line)">All Other Adverse Events</th>
-                <th class="num" style="border-bottom:2px solid var(--line);font-weight:700">Row Marginal (Total)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><b>Target Drug: ${esc(p.drug)}</b></td>
-                <td class="num mono" style="font-size:16px;font-weight:700;color:var(--blue);background:var(--blue-soft)">
-                  a = ${p.a.toLocaleString()}
-                  <div style="font-size:10.5px;font-weight:normal;color:var(--mut)">Drug + Event</div>
-                </td>
-                <td class="num mono" style="font-size:15px">
-                  b = ${p.b.toLocaleString()}
-                  <div style="font-size:10.5px;color:var(--mut)">Drug + Other Events</div>
-                </td>
-                <td class="num mono" style="font-weight:700">
-                  a + b = ${row1.toLocaleString()}
-                </td>
-              </tr>
-              <tr>
-                <td><b>All Other Suspect Drugs</b></td>
-                <td class="num mono" style="font-size:15px;color:var(--violet)">
-                  c = ${p.c.toLocaleString()}
-                  <div style="font-size:10.5px;color:var(--mut)">Other Drugs + Event</div>
-                </td>
-                <td class="num mono" style="font-size:15px">
-                  d = ${p.d.toLocaleString()}
-                  <div style="font-size:10.5px;color:var(--mut)">Other Drugs + Other Events</div>
-                </td>
-                <td class="num mono" style="font-weight:700">
-                  c + d = ${row2.toLocaleString()}
-                </td>
-              </tr>
-              <tr style="background:var(--card);border-top:2px solid var(--line)">
-                <td><b>Column Marginal (Total)</b></td>
-                <td class="num mono" style="font-weight:700;color:var(--blue)">
-                  a + c = ${col1.toLocaleString()}
-                </td>
-                <td class="num mono" style="font-weight:700">
-                  b + d = ${col2.toLocaleString()}
-                </td>
-                <td class="num mono" style="font-weight:800;font-size:16px;color:var(--ink)">
-                  N = ${N.toLocaleString()}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Formulas Grid -->
-        <div class="grid g3" style="gap:14px;margin-bottom:18px">
-          <!-- PRR -->
-          <div class="fact" style="padding:14px;border:1px solid var(--line)">
-            <div class="row" style="margin-bottom:6px">
-              <span class="badge b-info">PRR</span>
-              <span class="sp"></span>
-              <span class="badge ${p.prr >= 2 ? 'b-ok' : 'b-bad'}">${p.prr >= 2 ? '✓ ≥ 2.0 Met' : '✗ Below 2.0'}</span>
-            </div>
-            <div class="val" style="font-size:24px;color:var(--blue);margin:2px 0">${p.prr}</div>
-            <div style="font-size:11.5px;color:var(--mut);margin-bottom:6px">Proportional Reporting Ratio</div>
-            <div class="mono" style="font-size:11px;background:var(--card);padding:6px;border-radius:6px;line-height:1.4">
-              [a / (a + b)] / [c / (c + d)]<br>
-              = (${p.a} / ${row1}) / (${p.c} / ${row2})<br>
-              = <b>${p.prr}</b>
-            </div>
-            <div style="font-size:11.5px;color:var(--ink-2);margin-top:6px">
-              Event is reported <b>${p.prr}×</b> more frequently with ${esc(p.drug)} than with background drugs.
-            </div>
-          </div>
-
-          <!-- ROR -->
-          <div class="fact" style="padding:14px;border:1px solid var(--line)">
-            <div class="row" style="margin-bottom:6px">
-              <span class="badge b-vio">ROR (95% CI)</span>
-              <span class="sp"></span>
-              <span class="badge ${p.ror_lo > 1 ? 'b-ok' : 'b-mut'}">${p.ror_lo > 1 ? '✓ Lower CI > 1' : 'CI spans 1'}</span>
-            </div>
-            <div class="val" style="font-size:24px;color:var(--violet);margin:2px 0">${fx(p.ror, 2)}</div>
-            <div style="font-size:11.5px;color:var(--mut);margin-bottom:6px">Reporting Odds Ratio</div>
-            <div class="mono" style="font-size:11px;background:var(--card);padding:6px;border-radius:6px;line-height:1.4">
-              (a · d) / (b · c)<br>
-              = (${p.a} · ${p.d}) / (${p.b} · ${p.c})<br>
-              95% CI: <b>[${fx(p.ror_lo, 2)}, ${fx(p.ror_hi, 2)}]</b>
-            </div>
-            <div style="font-size:11.5px;color:var(--ink-2);margin-top:6px">
-              Wald 95% Confidence Interval based on ln(ROR) standard error.
-            </div>
-          </div>
-
-          <!-- Chi2 -->
-          <div class="fact" style="padding:14px;border:1px solid var(--line)">
-            <div class="row" style="margin-bottom:6px">
-              <span class="badge b-teal">χ² (Yates)</span>
-              <span class="sp"></span>
-              <span class="badge ${p.chi2 >= 4 ? 'b-ok' : 'b-bad'}">${p.chi2 >= 4 ? '✓ ≥ 4.0 Met' : '✗ Below 4.0'}</span>
-            </div>
-            <div class="val" style="font-size:24px;color:var(--teal);margin:2px 0">${fx(p.chi2, 2)}</div>
-            <div style="font-size:11.5px;color:var(--mut);margin-bottom:6px">Continuity-Corrected Chi-Square</div>
-            <div class="mono" style="font-size:11px;background:var(--card);padding:6px;border-radius:6px;line-height:1.4">
-              N(|ad - bc| - N/2)² / (Marginals)<br>
-              d.f. = 1, p &lt; ${p.chi2 >= 10.8 ? '0.001' : p.chi2 >= 6.6 ? '0.01' : p.chi2 >= 3.84 ? '0.05' : '0.10'}<br>
-              = <b>${fx(p.chi2, 2)}</b>
-            </div>
-            <div style="font-size:11.5px;color:var(--ink-2);margin-top:6px">
-              Tests independence against random reporting noise.
-            </div>
-          </div>
-        </div>
-
-        <!-- Evans Criteria Verdict Box -->
-        <div class="callout ${p.is_signal ? 'ok' : 'warn'}" style="margin-bottom:18px">
-          <div class="row" style="justify-content:space-between;margin-bottom:6px">
-            <b style="font-size:14px">Evans Criteria Evaluation (Evans et al., 2001)</b>
-            <span class="badge ${p.is_signal ? 'b-ok' : 'b-bad'}" style="font-size:12.5px">${p.is_signal ? '✓ STATISTICAL SIGNAL CONFIRMED' : 'BELOW THRESHOLD'}</span>
-          </div>
-          <div style="font-size:13px;line-height:1.7">
-            1. <b>Case Count:</b> a = ${p.a} ${p.a >= 3 ? '<span style="color:var(--ok);font-weight:700">≥ 3 (PASSED)</span>' : '<span style="color:var(--bad);font-weight:700">&lt; 3 (FAILED)</span>'}<br>
-            2. <b>Disproportionality:</b> PRR = ${p.prr} ${p.prr >= 2.0 ? '<span style="color:var(--ok);font-weight:700">≥ 2.0 (PASSED)</span>' : '<span style="color:var(--bad);font-weight:700">&lt; 2.0 (FAILED)</span>'}<br>
-            3. <b>Statistical Significance:</b> χ² = ${fx(p.chi2, 2)} ${p.chi2 >= 4.0 ? '<span style="color:var(--ok);font-weight:700">≥ 4.0 (PASSED)</span>' : '<span style="color:var(--bad);font-weight:700">&lt; 4.0 (FAILED)</span>'}
-          </div>
-        </div>
-
-        <div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:14px">
-          <div style="font-size:12px;color:var(--mut)">
-            🔒 Verified against Exasol <span class="mono">PV.SIGNALS</span> · Deterministic Mathematical Execution
-          </div>
-          <button class="btn sm" id="modalCloseBtn">Close Matrix</button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(ov);
-    const close = () => ov.remove();
-    document.getElementById('modalClose').onclick = close;
-    document.getElementById('modalCloseBtn').onclick = close;
-    ov.onclick = e => { if (e.target === ov) close(); };
-  };
-
   A.views.signals = function () {
     const U = A.sigUI, list = (U.all ? A.pairs : A.flagged).filter(p => !U.drug || p.drug === U.drug);
     const inv = Object.keys(A.invState).length;
     const body = `<div class="grid g4">
       <div class="card kpi"><div class="lb">Drug–event pairs</div><div class="v">${A.pairs.length}</div><div class="ft">across ${A.reports.length.toLocaleString()} reports</div></div>
-      <div class="card kpi"><div class="lb">Flagged by Evans</div><div class="v" style="color:var(--blue)">${A.flagged.length}</div><div class="ft">PRR ≥ 2 · χ² ≥ 4 · cases ≥ 3</div></div>
+      <div class="card kpi"><div class="lb">Flagged by Evans</div><div class="v" style="color:var(--bad-ink)">${A.flagged.length}</div><div class="ft">PRR ≥ 2 · χ² ≥ 4 · cases ≥ 3</div></div>
       <div class="card kpi"><div class="lb">Investigated</div><div class="v">${inv}</div><div class="ft">AI-read, rule-assessed</div></div>
-      <div class="card kpi"><div class="lb">Awaiting sign-off</div><div class="v" style="color:var(--warn)">${Object.values(A.invState).filter(s => s.status === 'in_review').length}</div><div class="ft">human approval needed</div></div></div>
-    ${sourceCard()}
-    <div class="grid g-7-5 mt" style="align-items:start"><div class="card"><div class="hd"><div><h3>Signal map</h3><div class="sub">Pairs in the blue zone meet all three Evans criteria. Bubble size shows χ².</div></div></div>${C.bubble(A.pairs.filter(p => !U.drug || p.drug === U.drug), { href: s => A.sigUrl(s.signal_id) })}</div>
-      <div class="card"><div class="hd"><div><h3>Drug × event heat map</h3><div class="sub">Numbers are case counts. Blue outlined cells are flagged signals; darker means higher PRR.</div></div></div>${C.heat(A.drugs, A.events, (d, e) => A.pairMap.get(d + '__' + e), { href: c => A.sigUrl(c.signal_id) })}</div></div>
-    <div class="card mt">
-      <div class="callout info" style="margin-bottom:16px;font-size:12.5px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div>
-          <b>FDA & EMA Evans Criteria Standard:</b> A drug–event pair is classified as a verified safety signal if and only if: 
-          <span class="mono" style="background:var(--card);padding:2px 6px;border-radius:6px;font-weight:600">a ≥ 3 cases</span> · 
-          <span class="mono" style="background:var(--card);padding:2px 6px;border-radius:6px;font-weight:600">PRR ≥ 2.00</span> · 
-          <span class="mono" style="background:var(--card);padding:2px 6px;border-radius:6px;font-weight:600">χ² ≥ 4.00</span>.
-        </div>
-        <span class="badge b-teal">Evans et al. (2001) Pharmacoepidemiol Drug Saf</span>
-      </div>
-      <div class="row" style="margin-bottom:16px"><button class="chip ${!U.drug ? 'on' : ''}" data-d="">All drugs</button>${A.drugs.map(d => `<button class="chip ${U.drug === d ? 'on' : ''}" data-d="${d}">${d}</button>`).join('')}<span class="sp"></span><div class="seg"><button data-all="0" class="${!U.all ? 'on' : ''}">Flagged only</button><button data-all="1" class="${U.all ? 'on' : ''}">All pairs</button></div></div>
-      <div class="scroll"><table><thead><tr><th>Signal</th><th class="num">Cases</th><th class="num">PRR</th><th>ROR 95% CI</th><th class="num">χ²</th><th>Evans</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead><tbody>${list.map(p => {
+      <div class="card kpi"><div class="lb">Awaiting sign-off</div><div class="v" style="color:var(--warn-ink)">${Object.values(A.invState).filter(s => s.status === 'in_review').length}</div><div class="ft">human approval needed</div></div></div>
+    <div class="card mt"><div class="hd"><div><h3>Signal map</h3><div class="sub">Pairs in the red zone meet all three Evans criteria. Bubble size shows χ².</div></div></div>${C.bubble(A.pairs.filter(p => !U.drug || p.drug === U.drug), { href: s => A.sigUrl(s.signal_id), w: 1000, h: 380 })}</div>
+      <div class="card mt"><div class="hd"><div><h3>Drug × event heat map</h3><div class="sub">Numbers are case counts. Red outlined cells are flagged signals; darker means higher PRR.</div></div></div>${C.heat(A.drugs, A.events, (d, e) => A.pairMap.get(d + '__' + e), { href: c => A.sigUrl(c.signal_id) })}</div>
+    <div class="card mt"><div class="row" style="margin-bottom:16px"><button class="chip ${!U.drug ? 'on' : ''}" data-d="">All drugs</button>${A.drugs.map(d => `<button class="chip ${U.drug === d ? 'on' : ''}" data-d="${d}">${d}</button>`).join('')}<span class="sp"></span><div class="seg"><button data-all="0" class="${!U.all ? 'on' : ''}">Flagged only</button><button data-all="1" class="${U.all ? 'on' : ''}">All pairs</button></div></div>
+      <div class="scroll"><table><thead><tr><th>Signal</th><th class="num">Cases</th><th class="num">PRR</th><th>ROR 95% CI</th><th class="num">χ²</th><th>Evans</th><th>Status</th><th></th></tr></thead><tbody>${list.map(p => {
         const st = A.invState[p.signal_id], b = st ? A.build(p.signal_id) : null, ok = A.canInvestigate(p);
-        return `<tr class="click" data-s="${esc(p.signal_id)}"><td><b>${esc(p.drug)}</b> + ${esc(p.event)}</td><td class="num mono">${p.a}</td><td class="num mono">${p.prr}</td><td class="mono" style="font-size:12.5px">${fx(p.ror, 1)} <span style="color:var(--mut)">(${fx(p.ror_lo, 1)}–${fx(p.ror_hi, 1)})</span></td><td class="num mono">${fx(p.chi2, 1)}</td><td>${p.is_signal ? '<span class="badge b-info">Signal</span>' : '<span class="badge b-mut">Below threshold</span>'}</td><td>${b ? (st.status === 'completed' ? '<span class="badge b-ok">Signed off</span> ' : '<span class="badge b-warn">In review</span> ') + A.recBadge(b.rec.rule_id) : ok ? '<span class="badge b-mut">Not started</span>' : '<span class="badge b-mut" data-tip="Needs live model extraction">Stats only</span>'}</td><td style="text-align:right;white-space:nowrap"><button class="btn ghost sm" data-matrix="${esc(p.signal_id)}" title="View 2×2 Contingency Matrix and mathematical derivation" style="margin-right:6px">2×2 Matrix</button>${ok ? `<button class="btn sm ${b ? 'ghost' : ''}" data-i="${esc(p.signal_id)}">${b ? 'Open' : 'Investigate'}</button>` : ''}</td></tr>`;
+        return `<tr class="click" data-s="${esc(p.signal_id)}"><td><b>${esc(p.drug)}</b> + ${esc(p.event)}</td><td class="num mono">${p.a}</td><td class="num mono">${fx(p.prr, 1)}</td><td class="mono" style="font-size:12.5px">${fx(p.ror, 1)} <span style="color:var(--mut)">(${fx(p.ror_lo, 1)}–${fx(p.ror_hi, 1)})</span></td><td class="num mono">${fx(p.chi2, 1)}</td><td>${p.is_signal ? '<span class="badge b-bad">Signal</span>' : '<span class="badge b-mut">Below threshold</span>'}</td><td>${b ? (st.status === 'completed' ? '<span class="badge b-ok">Workflow: Signed off</span> ' : '<span class="badge b-warn">Workflow: In review</span> ') + A.recBadge(b.rec.rule_id).replace('">', '">Rule: ') : ok ? '<span class="badge b-mut">Not started</span>' : '<span class="badge b-mut" data-tip="Needs live model extraction">Stats only</span>'}</td><td style="text-align:right">${ok ? `<button class="btn sm ${b ? 'ghost' : ''}" data-i="${esc(p.signal_id)}">${b ? 'Open' : 'Investigate'}</button>` : ''}</td></tr>`;
       }).join('') || '<tr><td colspan="8"><div class="empty">No pairs.</div></td></tr>'}</tbody></table></div>
       <div class="callout info mt" style="font-size:12.5px"><b>Why some pairs say “Stats only”.</b> Investigating a signal needs an AI to read every case narrative. This build ships the original project’s cached, schema-validated extractions for the ${A.pairs.filter(A.canInvestigate).length} pairs it investigated. The statistics are computed live for all ${A.pairs.length}.</div></div>`;
     A.after = () => {
@@ -217,23 +29,9 @@
       document.querySelectorAll('[data-all]').forEach(b => b.onclick = () => { A.sigUI.all = b.dataset.all === '1'; A.rerender(); });
       document.querySelectorAll('tr[data-s]').forEach(r => r.onclick = e => { if (e.target.closest('button')) return; location.hash = A.sigUrl(r.dataset.s); });
       document.querySelectorAll('[data-i]').forEach(b => b.onclick = () => A.runInvestigate(b.dataset.i));
-      document.querySelectorAll('[data-matrix]').forEach(b => b.onclick = () => A.showContingencyModal(b.dataset.matrix));
     };
     return A.shell('Signal detection', 'Statistics detect candidate signals across every drug–event pair. Pick one to investigate.', body);
   };
-  // Where the numbers come from: Exasol SQL, cross-checked against the independent browser calculation.
-  function sourceCard() {
-    const s = A.signalSource || {};
-    if (s.db !== 'exasol') return `<div class="callout warn mt" style="font-size:12.5px"><b>Computed in your browser.</b> The Exasol database was not reachable${s.error ? ` (${esc(s.error)})` : ''}, so these statistics come from the built-in copy of the data. Start Atheria through the server (<span class="mono">/atheria</span>) to compute them in Exasol.</div>`;
-    const allAgree = s.agree === s.total && s.total === s.browserTotal;
-    return `<div class="card mt"><div class="hd"><div><div class="row" style="gap:8px;margin-bottom:6px"><span class="badge b-ok">⚡ In-Memory Execution: ~4 ms</span><span class="badge b-info">Exasol · PV.SIGNALS</span><span class="badge b-teal">Sovereign Cluster</span></div><h3>Where these numbers come from</h3><div class="sub">Computed by SQL in the Exasol in-memory database over ${s.reports ? s.reports.toLocaleString() : '1,261'} reports in <span class="mono">PV.REPORTS</span>. Fixed mathematical formulas, zero AI drift.</div></div></div>
-      <div class="callout ${allAgree ? 'ok' : 'warn'}" style="font-size:12.5px">${allAgree
-        ? `<b>Cross-check passed.</b> An independent calculation in your browser gives the same counts, PRR, ROR, χ² and verdict for all ${s.total} drug–event pairs.`
-        : `<b>Cross-check: ${s.agree} of ${s.total} pairs agree</b> with the browser calculation (browser has ${s.browserTotal} pairs). The database may hold reports the browser copy does not, for example new SafeReport submissions. The database figures are shown.`}</div>
-      <details class="mt"><summary style="cursor:pointer;font-size:13px"><b>Show the SQL</b></summary>
-        <div class="sub mt">Query run for this page:</div><pre class="mono" style="white-space:pre-wrap;font-size:12px;margin:6px 0 12px">${esc(s.query)}</pre>
-        <div class="sub">Definition of the view <span class="mono">PV.SIGNALS</span>, read from the database:</div><pre class="mono" style="white-space:pre-wrap;font-size:12px;margin:6px 0 0">${esc(s.viewSql)}</pre></details></div>`;
-  }
   const STEPS = ['Statistics', 'AI extraction', 'Guardrails verify quotes', 'Rules decide', 'Ready for review'];
   A.runInvestigate = async function (sid) {
     if (A.invState[sid]) { location.hash = A.sigUrl(sid); return; }
@@ -257,15 +55,12 @@
     return overview(b);
   };
   const crumb = (p, extra) => `<a href="#/signals">Signals</a> / <a href="${A.sigUrl(p.signal_id)}">${esc(A.sigLabel(p))}</a>${extra ? ' / ' + extra : ''}`;
-  function tabs(b, on) { const u = A.sigUrl(b.sid); return `<div class="seg" style="margin-bottom:18px">${[['', 'Overview'], ['/review', 'Review & sign-off'], ['/chat', 'Ask the evidence'], ['/trust', 'Trust lab']].map(([s, l]) => `<button onclick="location.hash='${u}${s}'" class="${on === s ? 'on' : ''}">${l}</button>`).join('')}</div>`; }
+  function tabs(b, on) { const u = A.sigUrl(b.sid); return `<div class="seg" style="margin-bottom:18px">${[['', 'Overview'], ['/review', 'Review & sign-off'], ['/chat', 'Ask the evidence'], ['/trust', 'Guardrail checks']].map(([s, l]) => `<button onclick="location.hash='${u}${s}'" class="${on === s ? 'on' : ''}">${l}</button>`).join('')}</div>`; }
   function notStarted(p) {
     const ok = A.canInvestigate(p);
-    const body = `<div class="grid g-7-5"><div class="card"><h3>Disproportionality statistics</h3><div class="sub" style="margin-bottom:16px">Computed live from the report counts</div><div class="grid g2">${statCards(p)}</div></div><div class="card"><div class="row"><h3>Contingency table</h3><span class="sp"></span><button class="btn ghost sm" id="openMatrix">Full 2×2 Matrix</button></div><div class="sub" style="margin-bottom:14px">Circle area is proportional to the count</div>${C.table2x2(p)}</div></div>
+    const body = `<div class="grid g-7-5"><div class="card"><h3>Disproportionality statistics</h3><div class="sub" style="margin-bottom:16px">Computed live from the report counts</div><div class="grid g2">${statCards(p)}</div></div><div class="card"><h3>Contingency table</h3><div class="sub" style="margin-bottom:14px">Circle area is proportional to the count</div>${C.table2x2(p)}</div></div>
       <div class="card mt">${ok ? `<div class="row"><div><h3>Ready to investigate</h3><div class="sub">${A.casesOf(p).length} case narratives will be read, every quote verified, and the rules applied.</div></div><span class="sp"></span><button class="btn" id="go">Start investigation ${A.ico('arrow')}</button></div>` : '<div class="callout warn"><b>Statistics only.</b> This pair has no cached AI extractions in the bundled data, so it cannot be investigated offline. With a live model connected, the same pipeline would run on its narratives.</div>'}</div>`;
-    A.after = () => {
-      const g = document.getElementById('go'); if (g) g.onclick = () => A.runInvestigate(p.signal_id);
-      const m = document.getElementById('openMatrix'); if (m) m.onclick = () => A.showContingencyModal(p);
-    };
+    A.after = () => { const g = document.getElementById('go'); if (g) g.onclick = () => A.runInvestigate(p.signal_id); };
     return A.shell(esc(A.sigLabel(p)), p.is_signal ? 'Flagged by the Evans criteria.' : 'Below the Evans thresholds.', body, '', crumb(p));
   }
   function statCards(p) {
@@ -289,30 +84,29 @@
     const recPath = recSteps(rec);
     const body = `${tabs(b, '')}
     <div class="grid g-8-4"><div class="grid g2" style="align-content:start">
-      <div class="card"><h3>Evans criteria</h3><div class="sub" style="margin-bottom:14px">Deterministic statistics. No AI involved.</div>${C.meter(Math.min(1, p.prr / 4), { label: 'PRR', right: p.prr, note: '/ needs ≥ 2', mark: .5, color: p.prr >= 2 ? 'var(--ok)' : 'var(--bad)' })}${C.meter(Math.min(1, p.chi2 / 8), { label: 'χ²', right: fx(p.chi2, 1), note: '/ needs ≥ 4', mark: .5, color: p.chi2 >= 4 ? 'var(--ok)' : 'var(--bad)' })}${C.meter(Math.min(1, p.a / 6), { label: 'Cases', right: p.a, note: '/ needs ≥ 3', mark: .5, color: p.a >= 3 ? 'var(--ok)' : 'var(--bad)' })}<div style="margin-top:6px">${p.is_signal ? '<span class="badge b-ok">All three met · statistical signal</span>' : '<span class="badge b-bad">Not a signal</span>'}</div></div>
-      <div class="card"><div class="row"><h3>Contingency table</h3><span class="sp"></span><button class="btn ghost sm" id="openMatrixOverview">Full 2×2 Matrix</button></div><div class="sub" style="margin-bottom:12px">Reports counted by drug and event</div>${C.table2x2(p)}</div>
-      <div class="card" style="grid-column:1/-1"><h3>Reporting odds ratio</h3><div class="sub" style="margin-bottom:8px">95% confidence interval. A line fully right of 1 means the drug is reported with this event more often than expected.</div>${C.forest([{ label: A.sigLabel(p), est: p.ror, lo: p.ror_lo, hi: p.ror_hi, color: 'var(--blue)' }, { label: 'PRR (point estimate)', est: p.prr, lo: p.prr, hi: p.prr, color: 'var(--violet)' }], { label: 'ROR with 95% CI' })}</div></div>
+      <div class="card"><h3>Evans criteria</h3><div class="sub" style="margin-bottom:14px">Deterministic statistics. No AI involved.</div>${C.meter(Math.min(1, p.prr / 4), { label: 'PRR', right: fx(p.prr, 1), note: '/ needs ≥ 2', mark: .5, color: p.prr >= 2 ? 'var(--bad)' : 'var(--c-una)' })}${C.meter(Math.min(1, p.chi2 / 8), { label: 'χ²', right: fx(p.chi2, 1), note: '/ needs ≥ 4', mark: .5, color: p.chi2 >= 4 ? 'var(--bad)' : 'var(--c-una)' })}${C.meter(Math.min(1, p.a / 6), { label: 'Cases', right: p.a, note: '/ needs ≥ 3', mark: .5, color: p.a >= 3 ? 'var(--bad)' : 'var(--c-una)' })}<div style="margin-top:6px">${p.is_signal ? '<span class="badge b-bad">All three met · statistical signal</span>' : '<span class="badge b-mut">Not a signal</span>'}</div></div>
+      <div class="card"><h3>Contingency table</h3><div class="sub" style="margin-bottom:12px">Reports counted by drug and event</div>${C.table2x2(p)}</div>
+      <div class="card" style="grid-column:1/-1"><div class="row" style="justify-content:space-between;gap:8px"><h3>Reporting odds ratio</h3><span class="badge b-mut">No AI</span></div><div class="sub" style="margin-bottom:8px">95% confidence interval. A line fully right of 1 means the drug is reported with this event more often than expected.</div>${C.forest([{ label: A.sigLabel(p), est: p.ror, lo: p.ror_lo, hi: p.ror_hi, color: 'var(--blue)' }, { label: 'PRR (point estimate)', est: p.prr, lo: p.prr, hi: p.prr, color: 'var(--violet)' }], { label: 'ROR with 95% CI' })}</div></div>
       <div class="card"><div class="row" style="margin-bottom:14px"><h3>Recommendation</h3><span class="sp"></span><span class="badge ${done ? 'b-ok' : 'b-warn'}">${done ? 'Signed off' : 'Awaiting human sign-off'}</span></div>
         <div style="font-size:21px;font-weight:700;letter-spacing:-.02em;line-height:1.25">${esc(rec.recommendation)}</div><div style="margin:10px 0 16px" class="row">${A.recBadge(rec.rule_id)}<code>${rec.rule_id} v${rec.version}</code></div>
         <div class="list" style="gap:8px">${recPath}</div>
         <div class="row mt"><a class="btn" href="${A.sigUrl(b.sid)}/review">${done ? 'View sign-off' : 'Review & sign off'} ${A.ico('arrow')}</a></div></div></div>
     <div class="grid g3 mt">
-      <div class="card"><div class="hd"><div><h3>Causality of ${cases.length} cases</h3><div class="sub">Per-case category from cau_001 ${E.CAUSALITY.version}${overrides ? ` · ${overrides} human override(s) included` : ''}</div></div></div><div class="row" style="justify-content:center;gap:18px">${C.donut(donutD, { size: 160, center: cases.length, sub: 'cases' })}<div style="min-width:120px">${C.legend(donutD).replace('class="legend"', 'class="legend" style="flex-direction:column;gap:7px"')}</div></div></div>
+      <div class="card"><div class="hd"><div><div class="row" style="justify-content:space-between;gap:8px"><h3>Causality of ${cases.length} cases</h3><span class="badge b-teal">Rule on AI-extracted facts</span></div><div class="sub">Per-case category from cau_001 ${E.CAUSALITY.version}${overrides ? ` · ${overrides} human override(s) included` : ''}</div></div></div><div class="row" style="justify-content:center;gap:18px">${C.donut(donutD, { size: 160, center: cases.length, sub: 'cases' })}<div style="min-width:120px">${C.legend(donutD).replace('class="legend"', 'class="legend" style="flex-direction:column;gap:7px"')}</div></div></div>
       <div class="card"><div class="hd"><div><h3>How the rule reads this mix</h3><div class="sub">Bars against rec_001 thresholds (black marker)</div></div></div>${C.meter(rec.inputs.unassessable_share, { label: 'Unassessable share', mark: .5, dir: '>', color: 'var(--c-una)', tip: 'Above 50% → insufficient information' })}${C.meter(rec.inputs.supportive_share, { label: 'Supportive (Certain + Probable)', mark: .5, color: 'var(--c-cert)' })}${C.meter(rec.inputs.unlikely_share, { label: 'Unlikely share', mark: .5, color: 'var(--c-unl)' })}</div>
       <div class="card"><div class="hd"><div><h3>Trust receipts</h3><div class="sub">What the guardrails did to the AI output</div></div></div><div class="row" style="gap:18px">${C.ring(M.verified / Math.max(1, M.verified + M.rejected), { size: 104, color: 'var(--ok)', label: 'quotes verified' })}<div style="font-size:13.5px"><b>${M.verified}</b> quotes verified in source<br><b>${M.rejected}</b> rejected as unbacked<br><b>${M.reclassified}</b> ruled-out causes reclassified<br><span style="color:var(--mut)">≈ ${(M.minutes / 60).toFixed(1)} h of reading saved</span></div></div></div></div>
     <div class="grid g3 mt">
-      <div class="card"><h3>Time from drug start to onset</h3><div class="sub" style="margin-bottom:8px">Days, only where a verified quote states it (${onset.length}/${cases.length} cases)</div>${C.hist(onset, { bins: 6 })}</div>
-      <div class="card"><h3>Dechallenge and rechallenge</h3><div class="sub" style="margin-bottom:14px">What happened when the drug was stopped or restarted</div><div style="font-size:13px;font-weight:600;margin-bottom:6px">Dechallenge</div>${C.stack(Object.entries(dc).map(([k, v]) => ({ label: A.human(k), value: v, color: chCol[k] })), { h: 18 })}<div style="font-size:13px;font-weight:600;margin:16px 0 6px">Rechallenge</div>${C.stack(Object.entries(rc).map(([k, v]) => ({ label: A.human(k), value: v, color: chCol[k] })), { h: 18 })}<div class="legend mt">${Object.keys(chCol).map(k => `<span><i style="background:${chCol[k]}"></i>${A.human(k)}</span>`).join('')}</div></div>
-      <div class="card"><h3>Confounders found</h3><div class="sub" style="margin-bottom:14px">Other explanations verified in the narratives</div>${alts.length ? C.hbars(alts.map(([k, v]) => ({ label: A.human(k), value: v, text: v + ' cases', color: 'var(--c-poss)' })), { max: cases.length }) : '<div class="empty"><b>None verified</b>No alternative causes appear in these cases.</div>'}</div></div>
-    <div class="card mt"><div class="hd"><div><h3>Every case at a glance</h3><div class="sub">One tile per case, coloured by effective causality. Click to open the evidence.</div></div></div><div class="row" style="gap:6px;margin-bottom:14px">${cases.map(c => `<a href="${A.sigUrl(b.sid)}/case/${c.id}" ${C.tip(c.id + ' · ' + c.cat + (c.override ? ' (human override)' : '') + '\n' + c.rule.rule_id)} style="width:26px;height:26px;border-radius:8px;background:${catColor(c.cat)};display:block;${c.override ? 'outline:3px solid var(--violet);outline-offset:1px' : ''};${F && c.cat !== F ? 'opacity:.18' : ''}" aria-label="${c.id} ${c.cat}"></a>`).join('')}</div>
+      <div class="card"><div class="row" style="justify-content:space-between;gap:8px"><h3>Time from drug start to onset</h3><span class="badge b-ai">${A.ico('botai', 'width="13" height="13"')}AI-extracted · quote-verified</span></div><div class="sub" style="margin-bottom:8px">Days, only where a verified quote states it (${onset.length}/${cases.length} cases)</div>${C.hist(onset, { bins: 6 })}</div>
+      <div class="card"><div class="row" style="justify-content:space-between;gap:8px"><h3>Dechallenge and rechallenge</h3><span class="badge b-ai">${A.ico('botai', 'width="13" height="13"')}AI-extracted · quote-verified</span></div><div class="sub" style="margin-bottom:14px">What happened when the drug was stopped or restarted</div><div style="font-size:13px;font-weight:600;margin-bottom:6px">Dechallenge</div>${C.stack(Object.entries(dc).map(([k, v]) => ({ label: A.human(k), value: v, color: chCol[k] })), { h: 18 })}<div style="font-size:13px;font-weight:600;margin:16px 0 6px">Rechallenge</div>${C.stack(Object.entries(rc).map(([k, v]) => ({ label: A.human(k), value: v, color: chCol[k] })), { h: 18 })}<div class="legend mt">${Object.keys(chCol).map(k => `<span><i style="background:${chCol[k]}"></i>${A.human(k)}</span>`).join('')}</div></div>
+      <div class="card"><div class="row" style="justify-content:space-between;gap:8px"><h3>Confounders found</h3><span class="badge b-ai">${A.ico('botai', 'width="13" height="13"')}AI-extracted · quote-verified</span></div><div class="sub" style="margin-bottom:14px">Other explanations verified in the narratives</div>${alts.length ? C.hbars(alts.map(([k, v]) => ({ label: A.human(k), value: v, text: v + ' cases', color: 'var(--c-poss)' })), { max: cases.length }) : '<div class="empty"><b>None verified</b>No alternative causes appear in these cases.</div>'}</div></div>
+    <div class="card mt"><div class="hd"><div><div class="row" style="justify-content:space-between;gap:8px"><h3>Every case at a glance</h3><span class="badge b-teal">Rule on AI-extracted facts</span></div><div class="sub">One tile per case, coloured by effective causality. Click to open the evidence.</div></div></div><div class="row" style="gap:6px;margin-bottom:14px">${cases.map(c => `<a href="${A.sigUrl(b.sid)}/case/${c.id}" ${C.tip(c.id + ' · ' + c.cat + (c.override ? ' (human override)' : '') + '\n' + c.rule.rule_id)} style="width:26px;height:26px;border-radius:8px;background:${catColor(c.cat)};display:block;${c.override ? 'outline:3px solid var(--violet);outline-offset:1px' : ''};${F && c.cat !== F ? 'opacity:.18' : ''}" aria-label="${c.id} ${c.cat}"></a>`).join('')}</div>
       <div class="row" style="margin-bottom:14px"><button class="chip ${!F ? 'on' : ''}" data-f="">All ${cases.length}</button>${CATS.map(c => `<button class="chip ${F === c ? 'on' : ''}" data-f="${c}"><i class="dot" style="background:${catColor(c)}"></i>${c} ${dist[c]}</button>`).join('')}</div>
-      <div class="scroll"><table><thead><tr><th>Case</th><th>Patient</th><th>Causality</th><th class="num">Onset (d)</th><th>Dechallenge</th><th>Confounders</th><th>Rule</th><th></th></tr></thead><tbody>${vis.map(c => `<tr class="click" data-c="${c.id}"><td><b class="mono">${c.id}</b>${c.serious ? ' <span class="badge b-bad">serious</span>' : ''}</td><td>${c.age}${c.sex} · ${c.country}</td><td>${A.catBadge(c.cat)}${c.override ? ' <span class="badge b-vio">override</span>' : ''}</td><td class="num mono">${c.facts.time_to_onset.status === 'verified' ? c.facts.time_to_onset.value : '—'}</td><td>${A.human(c.facts.dechallenge.value)}</td><td>${c.facts.alternative_causes.length || '—'}</td><td><code>${c.rule.rule_id}</code></td><td style="text-align:right"><span style="color:var(--blue)">Open →</span></td></tr>`).join('')}</tbody></table></div></div>`;
+      <div class="scroll"><table><thead><tr><th>Case</th><th>Patient</th><th>Causality</th><th class="num">Onset (d)</th><th>Dechallenge</th><th>Confounders</th><th>Rule</th><th></th></tr></thead><tbody>${vis.map(c => `<tr class="click" data-c="${c.id}"><td><b class="mono">${c.id}</b>${c.serious ? ' <span class="badge b-bad">serious</span>' : ''}</td><td>${c.age}${c.sex} · ${c.country}</td><td>${A.catBadge(c.cat)}${c.override ? ' <span class="badge b-info">override</span>' : ''}</td><td class="num mono">${c.facts.time_to_onset.status === 'verified' ? c.facts.time_to_onset.value : '—'}</td><td>${A.human(c.facts.dechallenge.value)}</td><td>${c.facts.alternative_causes.length || '—'}</td><td><code>${c.rule.rule_id}</code></td><td style="text-align:right"><span style="color:var(--blue)">Open →</span></td></tr>`).join('')}</tbody></table></div></div>`;
     A.after = () => {
       document.querySelectorAll('[data-f]').forEach(x => x.onclick = () => { A.catFilter = x.dataset.f; A.rerender(); });
       document.querySelectorAll('tr[data-c]').forEach(r => r.onclick = () => location.hash = A.sigUrl(b.sid) + '/case/' + r.dataset.c);
-      const mo = document.getElementById('openMatrixOverview'); if (mo) mo.onclick = () => A.showContingencyModal(b.p);
     };
-    return A.shell(esc(p.drug) + ' <span style="color:var(--mut)">+</span> ' + esc(p.event), `${cases.length} cases · started ${A.fmtDate(st.startedAt)} · extraction prompt extract_v1.4.0`, body, `<a class="btn ghost" href="${A.sigUrl(b.sid)}/chat">${A.ico('chat')} Ask the evidence</a>`, crumb(p));
+    return A.shell(esc(p.drug) + ' <span style="color:var(--mut)">+</span> ' + esc(p.event), `${cases.length} cases · started ${A.fmtDate(st.startedAt)} · extraction prompt extract_v1.4.0`, body, '', crumb(p));
   }
   function recSteps(rec) {
     const I = rec.inputs, t = rec.thresholds, order = ['REC-01', 'REC-02', 'REC-03', 'REC-04'], fired = order.indexOf(rec.rule_id);
@@ -341,10 +135,10 @@
     const body = `<div class="row" style="margin-bottom:16px"><a class="btn ghost sm" href="${prev ? A.sigUrl(b.sid) + '/case/' + prev.id : '#'}" ${prev ? '' : 'style="opacity:.4;pointer-events:none"'}>← ${prev ? prev.id : ''}</a><span style="color:var(--mut);font-size:13px">Case ${i + 1} of ${b.cases.length}</span><a class="btn ghost sm" href="${next ? A.sigUrl(b.sid) + '/case/' + next.id : '#'}" ${next ? '' : 'style="opacity:.4;pointer-events:none"'}>${next ? next.id : ''} →</a></div>
     <div class="grid g-7-5" style="align-items:start"><div class="grid" style="gap:18px">
       <div class="card"><div class="hd"><div><h3>Source narrative</h3><div class="sub">${c.age}-year-old ${c.sex === 'F' ? 'woman' : 'man'} · ${c.country} · received ${c.date}${c.serious ? ' · flagged serious' : ''}</div></div></div>
-        <div class="legend" style="margin-bottom:10px"><span><i style="background:#CFE3FF"></i>Onset / timing</span><span><i style="background:#C9F0DD"></i>Dechallenge</span><span><i style="background:#B8E8F0"></i>Rechallenge</span><span><i style="background:#FFD9A8"></i>Alternative cause</span><span><i style="background:#E3E7EF"></i>Ruled out</span></div>
+        <div class="legend" style="margin-bottom:10px"><span><i class="h-onset"></i>Onset / timing</span><span><i class="h-dech"></i>Dechallenge</span><span><i class="h-rech"></i>Rechallenge</span><span><i class="h-alt"></i>Alternative cause</span><span><i class="h-exc"></i>Ruled out</span></div>
         <div class="src" id="srcbox">${A.highlight(c.narrative, sp2)}</div></div>
-      <div class="card"><div class="hd"><div><h3>Timeline from verified facts</h3><div class="sub">Built only from quotes the guardrails confirmed</div></div></div>${C.patientTimeline(f)}</div>
-      <div class="card"><div class="hd"><div><h3>Extracted facts</h3><div class="sub">Click a quote to jump to it in the narrative</div></div></div><div class="grid g2" style="gap:12px">
+      <div class="card"><div class="hd"><div><div class="row" style="justify-content:space-between;gap:8px"><h3>Timeline from verified facts</h3><span class="badge b-ai">${A.ico('botai', 'width="13" height="13"')}AI-extracted · quote-verified</span></div><div class="sub">Built only from quotes the guardrails confirmed</div></div></div>${C.patientTimeline(f)}</div>
+      <div class="card"><div class="hd"><div><div class="row" style="justify-content:space-between;gap:8px"><h3>Extracted facts</h3><span class="badge b-ai">${A.ico('botai', 'width="13" height="13"')}AI-extracted · quote-verified</span></div><div class="sub">Click a quote to jump to it in the narrative</div></div></div><div class="grid g2" style="gap:12px">
         <div class="fact"><div class="k">Time to onset</div><div class="val">${f.time_to_onset.status === 'verified' ? f.time_to_onset.value + ' days' : 'Not stated'}</div>${stBadge(f.time_to_onset)}${Q(f.time_to_onset, 'onset')}</div>
         <div class="fact"><div class="k">Time relationship</div><div class="val">${A.human(f.temporal_relationship.value)}</div>${stBadge(f.temporal_relationship)}${Q(f.temporal_relationship, 'temporal')}</div>
         <div class="fact"><div class="k">Dechallenge</div><div class="val">${A.human(f.dechallenge.value)}</div>${stBadge(f.dechallenge)}${Q(f.dechallenge, 'dech')}</div>
@@ -353,7 +147,7 @@
         <div class="fact" style="grid-column:1/-1"><div class="k">Explicitly ruled out (${f.excluded_causes.length})</div>${f.excluded_causes.map((a, k) => `<div style="margin-top:8px"><b>${esc(a.cause)}</b> ${a.reclassified_by ? '<span class="badge b-vio" data-tip="The model listed this as a cause, but the quote contains negation, so a guardrail moved it to ruled-out">reclassified by negation guardrail</span>' : '<span class="badge b-ok">verified</span>'}${Q(a, 'exc' + k)}</div>`).join('') || '<div style="color:var(--mut);margin-top:6px">None</div>'}</div>
         <div class="fact" style="grid-column:1/-1"><div class="k">Data gaps the AI noted</div><div class="row" style="margin-top:6px;gap:6px">${f.data_gaps.map(x => `<span class="badge b-mut">${esc(x)}</span>`).join('') || '<span style="color:var(--mut)">None noted</span>'}</div></div></div></div></div>
     <div class="grid sticky-r" style="gap:18px">
-      <div class="card"><div class="row"><h3>Causality</h3><span class="sp"></span>${A.catBadge(c.cat)}${c.override ? '<span class="badge b-vio">human override</span>' : ''}</div>
+      <div class="card"><div class="row"><h3>Causality</h3><span class="sp"></span>${A.catBadge(c.cat)}${c.override ? '<span class="badge b-info">human override</span>' : ''}</div>
         <p style="margin:12px 0;font-size:13.5px">${esc(c.rule.explanation)}</p><div class="row" style="margin-bottom:12px"><code>${c.rule.rule_id}</code><code>${c.rule.ruleset} v${c.rule.version}</code></div>${c.override ? `<div class="callout" style="background:var(--violet-soft);color:var(--violet);margin-bottom:12px;font-size:13px">Rule said <b>${c.rule.category}</b>. ${esc(c.override.actor)} set <b>${c.override.category}</b>: “${esc(c.override.reason)}”</div>` : ''}
         <div class="list" style="gap:6px">${cauSteps(c.rule)}</div></div>
       <div class="card"><h3>Guardrail receipt</h3><div class="sub" style="margin-bottom:12px">Level 2 checks, plain code. The model can’t argue past them.</div>
@@ -392,15 +186,15 @@
     const { p, cases, rec, st } = b, done = st.status === 'completed', S = st.summary, valid = new Set(cases.map(c => c.id));
     const chk = S ? E.checkSummaryCitations(S.final_text != null ? S.final_text : S.text, valid) : null;
     const body = `${tabs(b, '/review')}<div class="grid g-7-5" style="align-items:start"><div class="grid" style="gap:18px">
-      <div class="card"><div class="row" style="margin-bottom:6px"><h3>Investigation summary</h3><span class="sp"></span>${S ? `<span class="badge b-vio">${esc(S.label)}</span>` : ''}</div><div class="sub" style="margin-bottom:14px">${S ? `Drafted by <code>${esc(S.model_id)}</code> · <code>${esc(S.prompt_version)}</code>${S.edited ? ' · edited by you' : ''}` : 'The AI drafts from structured, already-verified data only. It cannot change the recommendation.'}</div>
-        ${S ? `<textarea id="sum" style="min-height:230px;font-size:14.5px;line-height:1.65" ${done ? 'disabled' : ''}>${esc(S.final_text != null ? S.final_text : S.text)}</textarea>
-        <div id="cites" style="margin-top:12px">${citeHtml(chk)}</div>` : `<div class="empty"><b>No draft yet</b>Generate a draft to review, edit and sign.</div><div class="row" style="justify-content:center"><button class="btn" id="draft">Draft summary</button></div>`}
-        ${S && !done ? '<div class="row mt"><button class="btn ghost sm" id="redraft">Re-draft</button><span style="font-size:12px;color:var(--mut)">Every case ID you cite is checked against this signal in real time.</span></div>' : ''}</div>
       <div class="card"><h3>What you are approving</h3><div class="sub" style="margin-bottom:14px">Everything below is frozen into the audit trail at sign-off</div><div class="grid g2" style="gap:12px">
         <div class="fact"><div class="k">Rule recommendation</div><b>${esc(rec.recommendation)}</b><div class="mono" style="font-size:12px;color:var(--mut);margin-top:4px">${rec.rule_id} v${rec.version}</div></div>
         <div class="fact"><div class="k">Causality mix</div>${C.stack(CATS.map(k => ({ label: k, value: rec.inputs.distribution[k], color: catColor(k) })), { h: 14 })}<div style="font-size:12px;color:var(--mut);margin-top:8px">${cases.length} cases · ${cases.filter(c => c.override).length} overridden</div></div>
-        <div class="fact"><div class="k">Statistics</div><b>PRR ${p.prr} · χ² ${fx(p.chi2, 1)}</b><div style="font-size:12px;color:var(--mut)">ROR ${fx(p.ror, 1)} (${fx(p.ror_lo, 1)}–${fx(p.ror_hi, 1)})</div></div>
-        <div class="fact"><div class="k">Pipeline versions</div><div class="mono" style="font-size:12px;line-height:1.7">extract_v1.4.0<br>cau_001 v${E.CAUSALITY.version}<br>rec_001 v${E.RECOMMEND.version}</div></div></div></div></div>
+        <div class="fact"><div class="k">Statistics</div><b>PRR ${fx(p.prr, 1)} · χ² ${fx(p.chi2, 1)}</b><div style="font-size:12px;color:var(--mut)">ROR ${fx(p.ror, 1)} (${fx(p.ror_lo, 1)}–${fx(p.ror_hi, 1)})</div></div>
+        <div class="fact"><div class="k">Pipeline versions</div><div class="mono" style="font-size:12px;line-height:1.7">extract_v1.4.0<br>cau_001 v${E.CAUSALITY.version}<br>rec_001 v${E.RECOMMEND.version}</div></div></div></div>
+      <div class="card"><div class="row" style="margin-bottom:6px"><h3>Investigation summary</h3><span class="sp"></span>${S ? (/template/.test(S.model_id) ? '<span class="badge b-mut">Template draft (no AI) – requires human approval</span>' : '<span class="badge b-ai">' + A.ico('botai', 'width="13" height="13"') + 'AI draft – requires human approval</span>') : ''}</div><div class="sub" style="margin-bottom:14px">${S ? `Drafted by <code>${esc(S.model_id)}</code> · <code>${esc(S.prompt_version)}</code>${S.edited ? ' · edited by you' : ''}` : 'The AI drafts from structured, already-verified data only. It cannot change the recommendation.'}</div>
+        ${S ? `<textarea id="sum" class="input" rows="12" style="min-height:280px;font-size:15px;line-height:1.65" ${done ? 'disabled' : ''}>${esc(S.final_text != null ? S.final_text : S.text)}</textarea>
+        <div id="cites" style="margin-top:12px">${citeHtml(chk)}</div>` : `<div class="empty"><b>No draft yet</b>Generate a draft to review, edit and sign.</div><div class="row" style="justify-content:center"><button class="btn" id="draft">Draft summary</button></div>`}
+        ${S && !done ? '<div class="row mt"><button class="btn ghost sm" id="redraft">Re-draft</button><span style="font-size:12px;color:var(--mut)">Every case ID you cite is checked against this signal in real time.</span></div>' : ''}</div></div>
     <div class="sticky-r">${done ? signed(b) : `<div class="card"><h3>Sign-off</h3><div class="sub" style="margin-bottom:14px">A named human owns the decision.</div>
       <div class="field"><label for="who">Reviewer name</label><input id="who" value="${esc(A.user.name)}"></div>
       <div class="field mt"><label>Decision</label><div class="seg" style="width:100%"><button data-dec="accept" class="on" style="flex:1">Accept recommendation</button><button data-dec="override" style="flex:1">Override</button></div></div>
@@ -422,7 +216,7 @@
         st.status = 'completed'; st.signoff = { actor: who, decision: dec, final_recommendation: final, reason, rule_recommendation: rec.recommendation, summary_sha256: E.sha256(text), ts: ev.ts, audit_hash: ev.hash }; S.final_text = text; save(); A.toast('Signed off · audit event #' + ev.seq); A.rerender();
       };
     };
-    return A.shell('Review & sign-off', esc(A.sigLabel(p)) + ' · AI draft, citation check, human approval', body, '', crumb(p, 'Review'));
+    return A.shell('Review & sign-off', esc(A.sigLabel(p)) + ' · draft, citation check, human approval', body, '', crumb(p, 'Review'));
   }
   function citeHtml(c) {
     if (!c) return '';
@@ -497,38 +291,23 @@
     return A.shell('Ask the evidence', 'A read-only assistant. It never assigns causality or changes the recommendation.', body, '', crumb(b.p, 'Chat'));
   }
   A.views.ask = function () {
-    const body = `<div class="grid g3">${A.pairs.filter(A.canInvestigate).map(p => { const st = A.invState[p.signal_id]; return `<a class="item" style="padding:20px" href="${st ? A.sigUrl(p.signal_id) + '/chat' : A.sigUrl(p.signal_id)}"><b>${esc(A.sigLabel(p))}</b><div class="m"><span>${A.casesOf(p).length} cases</span><span>PRR ${p.prr}</span>${st ? '<span class="badge b-ok">ready</span>' : '<span class="badge b-mut">investigate first</span>'}</div></a>`; }).join('')}</div>`;
+    const body = `<div class="grid g3">${A.pairs.filter(A.canInvestigate).map(p => { const st = A.invState[p.signal_id]; return `<a class="item" style="padding:20px" href="${st ? A.sigUrl(p.signal_id) + '/chat' : A.sigUrl(p.signal_id)}"><b>${esc(A.sigLabel(p))}</b><div class="m"><span>${A.casesOf(p).length} cases</span><span>PRR ${fx(p.prr, 1)}</span>${st ? '<span class="badge b-ok">ready</span>' : '<span class="badge b-mut">investigate first</span>'}</div></a>`; }).join('')}</div>`;
     return A.shell('Ask the evidence', 'Choose a signal. Chat is scoped to one signal at a time so answers can never mix evidence across drugs.', body);
   };
 
   /* ======================= AUDIT ======================= */
   A.auditUI = A.auditUI || { type: '', ver: null, tamper: null };
-  const TYPE_BADGE = { ai_extraction: 'b-vio', ai_triage_proposal: 'b-vio', ai_summary: 'b-vio', rule_evaluation: 'b-teal', human_override: 'b-warn', human_override_cleared: 'b-warn', human_signoff: 'b-ok', human_field_accept: 'b-ok', human_field_reject: 'b-bad', chat_exchange: 'b-info', decision_replay: 'b-mut' };
+  const TYPE_BADGE = { ai_extraction: 'b-vio', ai_triage_proposal: 'b-vio', ai_summary: 'b-vio', rule_evaluation: 'b-teal', human_override: 'b-info', human_override_cleared: 'b-info', human_signoff: 'b-ok', human_triage_reading: 'b-info', human_field_accept: 'b-ok', human_field_reject: 'b-bad', chat_exchange: 'b-info', decision_replay: 'b-mut' };
   A.views.audit = function () {
     const U = A.auditUI, ev = U.tamper ? U.tamper.chain : A.audit, v = U.ver || { valid: null };
     const types = [...new Set(A.audit.map(e => e.type))], shown = ev.slice().reverse().filter(e => !U.type || e.type === U.type).slice(0, 80);
     const bad = U.ver && !U.ver.valid ? U.ver.broken_at_seq : null;
     const chain = ev.map((e, i) => `<i class="${v.valid === null ? 'pend' : bad && e.seq >= bad ? 'bad' : e.local ? 'new' : ''}" ${C.tip('#' + e.seq + ' ' + e.type + (bad && e.seq === bad ? '\nHASH MISMATCH — this event was altered' : ''))}></i>`).join('');
-    const body = `<div class="grid g4"><div class="card kpi"><div class="lb">Events in chain</div><div class="v">${ev.length}</div><div class="ft">${D_.audit.length} persistent in Exasol + ${A.audit.filter(e => e.local).length} created here</div></div>
-      <div class="card kpi"><div class="lb">Chain status</div><div class="v" style="color:var(--${v.valid === null ? 'mut' : v.valid ? 'ok' : 'bad'});font-size:24px;padding:6px 0">${v.valid === null ? 'Ready to verify' : v.valid ? 'Intact ✓' : 'BROKEN ✗'}</div><div class="ft">${v.valid ? 'every hash recomputed' : v.valid === false ? 'altered at event #' + bad : 'SHA-256 Merkle-like chain'}</div></div>
-      <div class="card kpi"><div class="lb">Sovereign Storage</div><div class="v" style="font-size:20px;font-weight:700;color:var(--blue);padding:6px 0">Exasol PV.AUDIT</div><div class="ft"><span class="badge b-ok" style="font-size:10.5px">In-Memory Sovereign Ledger</span></div></div>
-      <div class="card kpi"><div class="lb">Compliance Standard</div><div class="v" style="font-size:18px;font-weight:700;color:var(--violet);padding:6px 0">FDA 21 CFR Part 11</div><div class="ft"><span class="badge b-info" style="font-size:10.5px">EU GVP Module II Compliant</span></div></div></div>
-    
-    <div class="card mt" style="background:var(--card-2)">
-      <div class="grid g2" style="gap:14px">
-        <div>
-          <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:700">Genesis Hash (Chain Anchor)</div>
-          <div class="mono" style="word-break:break-all;font-size:12px;margin-top:4px;color:var(--ink)">${E.GENESIS}</div>
-        </div>
-        <div>
-          <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:700">Head Hash (Current State)</div>
-          <div class="mono" style="word-break:break-all;font-size:12px;margin-top:4px;color:var(--blue)">${ev[ev.length - 1].hash}</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card mt"><div class="hd"><div><h3>Verify the chain</h3><div class="sub">Each event stores the SHA-256 hash of the prior block, timestamp, actor, event type, and canonical payload. Modifying any past event invalidates all downstream hashes.</div></div><div class="row"><button class="btn" id="ver">${A.ico('shield')} Verify chain</button><button class="btn ghost" id="tam">${U.tamper ? 'Undo tampering demo' : 'Simulate tampering'}</button><button class="btn ghost" id="expCert">${A.ico('file')} Audit Certificate</button></div></div>
-      <div class="chain">${chain}</div><div class="legend mt"><span><i style="background:var(--ok)"></i>Original (from Exasol PV.AUDIT)</span><span><i style="background:var(--blue)"></i>Created in this session</span><span><i style="background:var(--bad)"></i>Altered or after an altered event</span><span><i style="background:var(--line)"></i>Not yet verified</span></div>
+    const body = `<div class="grid g4"><div class="card kpi"><div class="lb">Events in chain</div><div class="v">${ev.length}</div><div class="ft">${D_.audit.length} original + ${A.audit.filter(e => e.local).length} created here</div></div>
+      <div class="card kpi"><div class="lb">Chain status</div><div class="v" style="color:var(--${v.valid === null ? 'mut' : v.valid ? 'ok' : 'bad'});font-size:26px;padding:8px 0">${v.valid === null ? 'Not verified' : v.valid ? 'Intact ✓' : 'BROKEN'}</div><div class="ft">${v.valid ? 'every hash recomputed' : v.valid === false ? 'altered at event #' + bad : 'press Verify'}</div></div>
+      <div class="card kpi" style="grid-column:span 2"><div class="lb">Head hash</div><div class="mono" style="margin-top:8px;font-size:13px" title="${ev[ev.length - 1].hash}">${ev[ev.length - 1].hash.slice(0, 16)}…</div><div class="ft">Changing any past event changes every hash after it.</div></div></div>
+    <div class="card mt"><div class="hd"><div><h3>Verify the chain</h3><div class="sub">Each event stores the hash of the one before it. Verification recomputes SHA-256 for every event in your browser, starting from the genesis hash.</div></div><div class="row"><button class="btn" id="ver">${A.ico('shield')} Verify chain</button><button class="btn ghost" id="tam">${U.tamper ? 'Undo tampering demo' : 'Simulate tampering'}</button></div></div>
+      <div class="chain">${chain}</div><div class="legend mt"><span><i style="background:var(--ok)"></i>Original (from the zip's real database)</span><span><i style="background:var(--blue)"></i>Created in this session</span><span><i style="background:var(--bad)"></i>Altered or after an altered event</span><span><i style="background:var(--line)"></i>Not yet verified</span></div>
       ${U.tamper ? `<div class="callout warn mt" style="font-size:13px"><b>Tampering demo.</b> A copy of the chain was edited at event #${U.tamper.seq} (a reviewer name was changed). Verify to watch it fail. Your real audit trail is untouched.</div>` : ''}</div>
     <div class="card mt"><div class="hd"><div><h3>Events</h3><div class="sub">Newest first · showing ${shown.length}</div></div><a class="btn ghost sm" id="exp">Export JSON</a></div><div class="row" style="margin-bottom:14px"><button class="chip ${!U.type ? 'on' : ''}" data-t="">All</button>${types.map(t => `<button class="chip ${U.type === t ? 'on' : ''}" data-t="${t}">${A.human(t)}</button>`).join('')}</div>
       <div class="tl">${shown.map(e => `<div class="e ${e.type.startsWith('human') ? 'h' : e.type === 'rule_evaluation' ? 'ok' : ''}"><div class="row"><span class="badge ${TYPE_BADGE[e.type] || 'b-mut'}">${A.human(e.type)}</span><b class="mono" style="font-size:12.5px">#${e.seq}</b><span style="color:var(--mut);font-size:12.5px">${A.fmtDate(e.ts)} · ${esc(e.actor)}</span>${e.local ? '<span class="badge b-info">this session</span>' : ''}</div><div style="font-size:13px;margin-top:4px;color:var(--ink-2)">${esc(summ(e))}</div><details><summary style="cursor:pointer;font-size:12px;color:var(--mut)">hash &amp; payload</summary><div class="mono" style="font-size:11px;word-break:break-all;color:var(--mut);margin:6px 0">prev ${e.prev_hash}<br>this ${e.hash}</div><pre class="mono" style="font-size:11.5px;white-space:pre-wrap;background:var(--card-2);padding:10px;border-radius:12px">${esc(JSON.stringify(e.payload, null, 1))}</pre></details></div>`).join('')}</div></div>`;
@@ -542,60 +321,6 @@
       document.getElementById('tam').onclick = () => { if (U.tamper) { U.tamper = null; U.ver = null; } else { const idx = Math.floor(A.audit.length / 2), cp = A.audit.map(e => ({ ...e })); const e = cp[idx]; const p2 = JSON.parse(JSON.stringify(e.payload)); p2.altered = true; e.payload = p2; e.ps = E.canonical(p2); U.tamper = { chain: cp, seq: e.seq }; U.ver = null; } A.rerender(); };
       document.querySelectorAll('[data-t]').forEach(x => x.onclick = () => { U.type = x.dataset.t; A.rerender(); });
       document.getElementById('exp').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(A.audit.map(({ ps, ...r }) => r), null, 1)], { type: 'application/json' })); a.download = 'atheria-audit.json'; a.click(); };
-      document.getElementById('expCert').onclick = () => {
-        const cert = [
-          '================================================================================',
-          '               SOVEREIGN HEALTH PHARMACOVIGILANCE PLATFORM',
-          '          AUDIT INTEGRITY & COMPLIANCE VERIFICATION CERTIFICATE',
-          '================================================================================',
-          '',
-          `Certificate Identifier : CERT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
-          `Issuing Platform       : Sovereign Health (Atheria PV Engine v2.4)`,
-          `Storage Technology     : Exasol In-Memory Sovereign Database (Table: PV.AUDIT)`,
-          `Regulatory Standard    : FDA 21 CFR Part 11 Electronic Records & EU GVP Module II`,
-          `Issuance Timestamp     : ${new Date().toISOString()}`,
-          `Generated By           : ${A.user.name} (${A.user.role || 'Safety Review Officer'})`,
-          `Chain Integrity Status : ${v.valid === false ? 'ALERT - TAMPER DETECTED' : 'CRYPTOGRAPHICALLY VALID - UNBROKEN MERKLE-LIKE HASH CHAIN'}`,
-          '',
-          '--------------------------------------------------------------------------------',
-          '1. CHAIN TOPOLOGY & CRYPTOGRAPHIC ANCHORS',
-          '--------------------------------------------------------------------------------',
-          `Total Sequenced Events : ${ev.length}`,
-          `Exasol Database Events : ${D_.audit.length}`,
-          `Local Session Events   : ${A.audit.filter(e => e.local).length}`,
-          `Genesis Anchor Hash    : ${E.GENESIS}`,
-          `Current Head Hash      : ${ev[ev.length - 1].hash}`,
-          `Hashing Algorithm      : SHA-256 (Canonical JSON Serialization)`,
-          `Chain Formulation      : H_i = SHA256(H_{i-1} || timestamp || event_type || actor || payload)`,
-          '',
-          '--------------------------------------------------------------------------------',
-          '2. REGULATORY COMPLIANCE ATTESTATION',
-          '--------------------------------------------------------------------------------',
-          '  [✓] FDA 21 CFR Part 11 § 11.10(e): Computer-generated, time-stamped audit trail',
-          '      that independently records the date and time of operator entries and actions.',
-          '  [✓] EU GVP Module II § II.B.4: Complete audit trail of all safety updates,',
-          '      clinical decisions, causality evaluations, and human overrides.',
-          '  [✓] Cryptographic Tamper Evidence: Any retroactive edit to any past block',
-          '      instantaneously breaks all subsequent hashes in the chain.',
-          '  [✓] Sovereign Data Governance: In-database persistence in Exasol ensures no',
-          '      adverse event data or audit history leaks to unvetted third-party services.',
-          '',
-          '--------------------------------------------------------------------------------',
-          '3. RECENT AUDIT TRAIL LOG SAMPLE (LATEST 5 EVENTS)',
-          '--------------------------------------------------------------------------------',
-          ...ev.slice(-5).map(e => `[Event #${e.seq}] ${e.ts} | Type: ${e.type} | Actor: ${e.actor}\n  Hash: ${e.hash}\n  Prev: ${e.prev_hash}\n  Data: ${JSON.stringify(e.payload)}`),
-          '',
-          '================================================================================',
-          '                     OFFICIAL ATTESTATION SEAL: [VERIFIED_VALID]',
-          '================================================================================'
-        ].join('\n');
-
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([cert], { type: 'text/plain' }));
-        a.download = `SovereignHealth_Audit_Certificate_${new Date().toISOString().slice(0, 10)}.txt`;
-        a.click();
-        A.toast('Audit Verification Certificate downloaded');
-      };
     };
     return A.shell('Audit trail', 'Append-only and hash-chained. Anyone can re-verify it, and any edit to history is detectable.', body);
   };
@@ -630,7 +355,7 @@
     const badge = !top ? '<span class="badge b-mut">Not confidently coded</span>' : `<span class="badge ${TIER_BADGE[top.tier]}">${TIER_LABEL[top.tier]} · ${Math.round(top.confidence * 100)}%</span>`;
     return `<div class="fact"><div class="row" style="margin-bottom:8px"><b>${esc(title)}</b><span class="sp"></span>${badge}${rightExtra || ''}</div>
       <div class="src" style="padding:12px 14px;font-size:13.5px;line-height:1.7;margin-bottom:10px">${hl}</div>
-      ${top ? `<div class="row" style="flex-wrap:wrap;gap:10px;align-items:center"><span class="badge b-vio">${esc(top.pt)}</span><span style="color:var(--mut);font-size:13px">${esc(top.soc)}</span></div>
+      ${top ? `<div class="row" style="flex-wrap:wrap;gap:10px;align-items:center"><span class="badge b-bad">${esc(top.pt)}</span><span style="color:var(--mut);font-size:13px">${esc(top.soc)}</span></div>
       <div class="row mt" style="flex-wrap:wrap;gap:6px"><span style="font-size:12.5px;color:var(--mut);margin-right:2px">Primary reasons:</span>${top.contributions.slice(0, 6).map(medChip).join('') || '<span style="font-size:12.5px;color:var(--mut)">none above zero</span>'}</div>` : '<div class="callout info" style="font-size:12.5px">No word in this text overlaps the trained vocabulary.</div>'}</div>`;
   }
   const rowsTbl = (h, r) => `<div class="scroll"><table><thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${r.map(x => `<tr>${x.map((c, i) => `<td ${i === 0 ? 'style="white-space:nowrap"' : ''}>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
@@ -654,15 +379,15 @@
     const approvedRuns = [];
     approvedSignals.forEach(b => { b.cases.slice(0, 2).forEach(c => approvedRuns.push({ title: `${A.sigLabel(b.p)} · ${c.id}`, text: c.narrative, out: E.classifyMedDRA_ML(c.narrative), href: `${A.sigUrl(b.sid)}/case/${c.id}` })); });
 
-    const body = `<div class="card"><h3>A trained model, not a lookup table</h3><p class="sub" style="margin:8px 0 14px;max-width:85ch;font-size:14px">This coder is <b>TF-IDF (1–2 word phrases) feeding a multinomial logistic regression</b>, trained offline on <b>symptomify</b> — a real, large dataset of VAERS-style vaccine adverse-event reports you provided, each already labelled with its MedDRA Preferred Term. Every prediction decomposes exactly into the words that produced it: the same weighted terms that drove training are the ones highlighted below, so “why” is read off the model itself, not a separate explanation bolted on afterwards.</p>${A.flowStrip()}</div>
+    const body = `<div class="callout warn" style="font-size:14px;margin-bottom:21px"><b>Not validated for these products.</b> This coder learned from vaccine adverse-event reports. Treat each suggested term as a starting point and confirm it against the narrative.</div><details class="card"><summary><h3 style="display:inline">How this coder works</h3></summary><p class="sub" style="margin:13px 0 0;max-width:85ch;font-size:14px">This coder is <b>TF-IDF (1–2 word phrases) feeding a multinomial logistic regression</b>, trained offline on <b>symptomify</b> — a real, large dataset of VAERS-style vaccine adverse-event reports you provided, each already labelled with its MedDRA Preferred Term. Every prediction decomposes exactly into the words that produced it: the same weighted terms that drove training are the ones highlighted below, so “why” is read off the model itself, not a separate explanation bolted on afterwards.</p></details>
     <div class="grid g4 mt">
       <div class="card kpi"><div class="lb">Training rows</div><div class="v">${M.n_train_rows.toLocaleString()}</div><div class="ft">sampled from symptomify train.json</div></div>
       <div class="card kpi"><div class="lb">MedDRA terms covered</div><div class="v">${M.n_classes}</div><div class="ft">the most frequent, best-supported PTs</div></div>
-      <div class="card kpi"><div class="lb">Test-set accuracy</div><div class="v" style="color:var(--ok)">${Math.round(M.metrics.test_accuracy * 100)}%</div><div class="ft">${M.metrics.test_n.toLocaleString()} held-out reports, never trained on</div></div>
+      <div class="card kpi"><div class="lb">Test-set accuracy</div><div class="v" style="color:var(--ok-ink)">${Math.round(M.metrics.test_accuracy * 100)}%</div><div class="ft">${M.metrics.test_n.toLocaleString()} held-out reports, never trained on</div></div>
       <div class="card kpi"><div class="lb">Macro-F1 (test)</div><div class="v">${M.metrics.test_macro_f1}</div><div class="ft">averaged evenly across all ${M.n_classes} terms</div></div></div>
     <div class="grid g-5-7 mt" style="align-items:start"><div class="card"><h3>Verified live, right now, in your browser</h3><div class="sub" style="margin:6px 0 16px;max-width:60ch">${M.sample_eval.length} real reports from the held-out dev split (never used in training) were just re-scored by the exact model shipped to this page — not a cached number.</div><div class="row" style="justify-content:center;gap:24px">${C.donut(liveDonut, { size: 160, sub: 'live-scored', center: liveRuns.length })}<div style="min-width:170px">${C.legend(liveDonut).replace('class="legend"', 'class="legend" style="flex-direction:column;gap:8px"')}</div></div><div class="callout ${Math.abs(liveCorrect / liveRuns.length - M.metrics.dev_accuracy) < 0.1 ? 'ok' : 'warn'} mt" style="font-size:12.5px">Live accuracy on this sample: <b>${Math.round(liveCorrect / liveRuns.length * 100)}%</b>, consistent with the ${Math.round(M.metrics.dev_accuracy * 100)}% measured over the full ${M.metrics.dev_n.toLocaleString()}-report dev set.</div></div>
       <div class="card"><h3>Predicted System Organ Class mix</h3><div class="sub" style="margin-bottom:14px">Where this live sample's predictions land, grouped by SOC</div>${C.hbars(socRows)}</div></div>
-    <div class="grid g2 mt">${firstCorrect ? mlCard('Worked example · correctly coded', firstCorrect.row.text, firstCorrect.out, `<span class="badge b-ok" style="margin-left:6px">Reported: ${esc(firstCorrect.row.label)}</span>`) : ''}
+    <div class="grid g2 mt">${firstCorrect ? mlCard('Worked example · correctly coded', firstCorrect.row.text, firstCorrect.out, `<span class="badge b-bad" style="margin-left:6px">Reported: ${esc(firstCorrect.row.label)}</span>`) : ''}
       ${firstWrong ? mlCard('Worked example · miscoded (shown, not hidden)', firstWrong.row.text, firstWrong.out, `<span class="badge b-bad" style="margin-left:6px">Reported: ${esc(firstWrong.row.label)}</span>`) : '<div class="card"><div class="empty"><b>No miscoded example in this sample</b>Every one of the 220 live-scored reports happened to match.</div></div>'}</div>
     <div class="card mt"><h3>Applied to your triage and approved cases</h3><div class="sub" style="margin:6px 0 14px;max-width:85ch">What you asked for: the same trained model, run over cases already sitting in this platform — the triage inbox, and signals a reviewer has investigated and signed off. <b>Read this honestly</b>: the model was trained on vaccine adverse-event reports, and these cases are about different, fictional products. Predictions here demonstrate the pipeline end-to-end — the evidence and the “why” are real and computed live — but are not a validated clinical mapping for this product set. That gap is exactly what a labelled dataset of <i>your own</i> cases would close.</div>
       <div class="row" style="margin:0 0 10px"><b style="font-size:14px">Triage inbox</b><span class="sp"></span><a href="#/inbox">Open triage inbox</a></div>
