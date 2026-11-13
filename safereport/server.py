@@ -772,5 +772,5 @@ def pv_signals():
 
 
 # The safety team's portal, served from the same server so it can call /api/pv/*.
-app.mount("/atheria", StaticFiles(directory=HERE.parent / "PV Teams" / "atheria-web", html=True), name="atheria")
+app.mount("/atheria", StaticFiles(directory=HERE.parent / "atheria-web", html=True), name="atheria")
 app.mount("/", StaticFiles(directory=HERE / "web", html=True), name="web")

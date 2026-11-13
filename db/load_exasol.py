@@ -21,7 +21,7 @@ from pathlib import Path
 import pyexasol
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA_JS = ROOT / "PV Teams" / "atheria-web" / "js" / "data.js"
+DATA_JS = ROOT / "atheria-web" / "js" / "data.js"
 
 DDL = [
     "CREATE SCHEMA IF NOT EXISTS PV",

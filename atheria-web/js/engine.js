@@ -252,7 +252,130 @@
   }
   function priority(elements, serious) { const n = CRITERIA.filter(c => elements[c].present).length; return Math.round(Math.min(1, 0.15 + n * 0.12 + (serious ? 0.35 : 0)) * 100) / 100; }
 
+  /* ---------- MedDRA auto-coder (explainable baseline, meddra_001 v1.0.0) ----------
+     Maps free-text adverse-event descriptions to a MedDRA Preferred Term and System
+     Organ Class by matching a small synonym dictionary (LLT-style phrases) against the
+     source text. Deliberately simple and fully inspectable: every prediction carries
+     the exact phrase(s) it matched, located back in the text, so "why" is never a black
+     box. It only knows the 15 PTs seen in this demo dataset — a provided, labelled
+     dataset is meant to replace or retrain this with real coverage and real ML. */
+  const MEDDRA_VERSION = '1.0.0';
+  const MEDDRA = {
+    'Rash': { soc: 'Skin and subcutaneous tissue disorders', kw: ['itchy rash', 'rash', 'hives', 'skin eruption', 'red spots', 'itching'] },
+    'Stevens-Johnson syndrome': { soc: 'Skin and subcutaneous tissue disorders', kw: ['stevens-johnson syndrome', 'stevens-johnson', 'toxic epidermal necrolysis', 'skin blistering', 'blistering skin', 'skin peeling'] },
+    'Hepatotoxicity': { soc: 'Hepatobiliary disorders', kw: ['hepatotoxicity', 'jaundice', 'liver injury', 'liver damage', 'raised transaminases', 'yellowing of the eyes', 'dark urine', 'cholestasis', 'hepatitis'] },
+    'Pancreatitis': { soc: 'Gastrointestinal disorders', kw: ['pancreatitis', 'pancreatic'] },
+    'Nausea': { soc: 'Gastrointestinal disorders', kw: ['nausea', 'vomiting', 'feeling sick', 'queasy', 'nauseous'] },
+    'Diarrhoea': { soc: 'Gastrointestinal disorders', kw: ['diarrhoea', 'diarrhea', 'loose stools'] },
+    'Dizziness': { soc: 'Nervous system disorders', kw: ['dizziness', 'dizzy', 'light-headed', 'lightheaded'] },
+    'Headache': { soc: 'Nervous system disorders', kw: ['headache', 'head pain', 'migraine'] },
+    'Insomnia': { soc: 'Psychiatric disorders', kw: ['insomnia', 'trouble sleeping', 'could not sleep', 'difficulty sleeping', 'unable to sleep'] },
+    'Fatigue': { soc: 'General disorders and administration site conditions', kw: ['fatigue', 'tiredness', 'no energy', 'exhausted', 'persistent tiredness'] },
+    'Interstitial lung disease': { soc: 'Respiratory, thoracic and mediastinal disorders', kw: ['interstitial lung disease', 'dyspnoea', 'shortness of breath', 'pulmonary reaction', 'lung disease'] },
+    'QT prolongation': { soc: 'Cardiac disorders', kw: ['qt prolongation', 'prolonged qt', 'qt interval', 'qtc'] },
+    'Hyponatraemia': { soc: 'Metabolism and nutrition disorders', kw: ['hyponatraemia', 'hyponatremia', 'low sodium', 'low blood sodium'] },
+    'Acute kidney injury': { soc: 'Renal and urinary disorders', kw: ['acute kidney injury', 'kidney injury', 'renal failure', 'kidney failure'] },
+    'Arthralgia': { soc: 'Musculoskeletal and connective tissue disorders', kw: ['arthralgia', 'joint pain', 'aching joints'] }
+  };
+  function classifyMedDRA(text, topN = 3) {
+    if (!text || !text.trim()) return { top: null, candidates: [] };
+    const cands = [];
+    for (const [pt, def] of Object.entries(MEDDRA)) {
+      let score = 0; const matches = [];
+      def.kw.forEach(kw => {
+        const re = new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+        const m = re.exec(text);
+        if (m) { score += 1; matches.push({ kw, quote: m[0] }); }
+      });
+      if (score > 0) cands.push({ pt, soc: def.soc, score, matches });
+    }
+    cands.sort((a, b) => b.score - a.score);
+    const top = cands[0] ? { ...cands[0] } : null;
+    if (top) {
+      top.spans = top.matches.map(m => { const sp = locateQuote(m.quote, text); return sp ? { s: sp[0], e: sp[1], kw: m.kw, quote: m.quote } : null; }).filter(Boolean);
+      top.confidence = Math.round(Math.min(0.97, 0.45 + top.score * 0.13) * 100) / 100;
+    }
+    return { top, candidates: cands.slice(0, topN).map(c => ({ pt: c.pt, soc: c.soc, score: c.score })) };
+  }
+
+  /* ---------- trained MedDRA ML coder ----------
+     Runs window.MEDDRA_MODEL (TF-IDF 1-2 grams + multinomial logistic regression, trained
+     offline on the symptomify/VAERS dataset) entirely client-side. Tokenisation here must
+     match the Python training pipeline exactly: lowercase \w\w+ tokens, unigrams + adjacent
+     bigrams, raw count × idf, no per-document normalisation — the same features the model
+     was fit on, so nothing is approximated at inference time except that the shipped weight
+     matrix itself is the one measured in the reported accuracy. */
+  const ML_SOC = {
+    'Product storage error': 'Injury, poisoning and procedural complications', 'Expired product administered': 'Injury, poisoning and procedural complications',
+    'Product administered to patient of inappropriate age': 'Injury, poisoning and procedural complications', 'Inappropriate schedule of product administration': 'Injury, poisoning and procedural complications',
+    'Interchange of vaccine products': 'Injury, poisoning and procedural complications', 'Incorrect dose administered': 'Injury, poisoning and procedural complications',
+    'Extra dose administered': 'Injury, poisoning and procedural complications', 'Underdose': 'Injury, poisoning and procedural complications',
+    'Wrong product administered': 'Injury, poisoning and procedural complications', 'Product preparation issue': 'Injury, poisoning and procedural complications',
+    'Incomplete course of vaccination': 'Injury, poisoning and procedural complications', 'Poor quality product administered': 'Injury, poisoning and procedural complications',
+    'Product dose omission issue': 'Injury, poisoning and procedural complications', 'Unevaluable event': 'General disorders and administration site conditions',
+    'Herpes zoster': 'Infections and infestations', 'Pain in extremity': 'Musculoskeletal and connective tissue disorders',
+    'Rash': 'Skin and subcutaneous tissue disorders', 'Dizziness': 'Nervous system disorders',
+    'Urticaria': 'Skin and subcutaneous tissue disorders', 'Tinnitus': 'Ear and labyrinth disorders',
+    'Headache': 'Nervous system disorders', 'Lymphadenopathy': 'Blood and lymphatic system disorders',
+    'Death': 'General disorders and administration site conditions', 'Syncope': 'Nervous system disorders',
+    'Injection site pain': 'General disorders and administration site conditions', 'Pyrexia': 'General disorders and administration site conditions',
+    'Pruritus': 'Skin and subcutaneous tissue disorders', 'COVID-19': 'Infections and infestations',
+    'Vaccination site pain': 'General disorders and administration site conditions', 'Fatigue': 'General disorders and administration site conditions',
+    'Arthralgia': 'Musculoskeletal and connective tissue disorders', 'Hypoaesthesia': 'Nervous system disorders',
+    'Pain': 'General disorders and administration site conditions', 'No adverse event': 'General disorders and administration site conditions',
+    'Paraesthesia': 'Nervous system disorders', 'Malaise': 'General disorders and administration site conditions',
+    'Vaccination complication': 'General disorders and administration site conditions', 'Myalgia': 'Musculoskeletal and connective tissue disorders',
+    'Diarrhoea': 'Gastrointestinal disorders', 'Injection site rash': 'General disorders and administration site conditions'
+  };
+  const ML_TOKEN_RE = /\b\w\w+\b/g;
+  function mlTokenize(text) {
+    const toks = (text.toLowerCase().match(ML_TOKEN_RE)) || [];
+    const grams = toks.slice();
+    for (let i = 0; i < toks.length - 1; i++) grams.push(toks[i] + ' ' + toks[i + 1]);
+    return grams;
+  }
+  let _mlVidx = null;
+  function mlVocabIndex() {
+    const M = root.MEDDRA_MODEL;
+    if (!M) return null;
+    if (_mlVidx && _mlVidx.M === M) return _mlVidx;
+    const vidx = Object.create(null);
+    M.terms.forEach((t, i) => { vidx[t] = i; });
+    _mlVidx = { M, vidx };
+    return _mlVidx;
+  }
+  function classifyMedDRA_ML(text, topN = 3) {
+    const ix = mlVocabIndex();
+    if (!ix) return { top: null, candidates: [], ready: false };
+    if (!text || !text.trim()) return { top: null, candidates: [], ready: true };
+    const { M, vidx } = ix;
+    const counts = Object.create(null);
+    mlTokenize(text).forEach(g => { if (vidx[g] != null) counts[g] = (counts[g] || 0) + 1; });
+    const keys = Object.keys(counts);
+    if (!keys.length) return { top: null, candidates: [], ready: true, reason: 'no_vocabulary_overlap' };
+    const n = M.classes.length, scores = new Array(n);
+    for (let ci = 0; ci < n; ci++) {
+      let s = M.intercepts[ci]; const w = M.weights[ci];
+      for (const g of keys) { const idx = vidx[g]; s += counts[g] * M.idf[idx] * w[idx]; }
+      scores[ci] = s;
+    }
+    const mx = Math.max(...scores), exps = scores.map(s => Math.exp(s - mx)), sum = exps.reduce((a, b) => a + b, 0);
+    const probs = exps.map(e => e / sum);
+    const order = scores.map((s, i) => i).sort((a, b) => scores[b] - scores[a]);
+    const bestIdx = order[0], w = M.weights[bestIdx];
+    const contributions = keys.map(g => { const idx = vidx[g]; return { term: g, contribution: Math.round(counts[g] * M.idf[idx] * w[idx] * 1000) / 1000 }; })
+      .filter(c => c.contribution > 0).sort((a, b) => b.contribution - a.contribution);
+    const evidence = Math.round(contributions.reduce((a, c) => a + c.contribution, 0) * 100) / 100;
+    const tier = evidence < 15 ? 'weak' : evidence < 40 ? 'moderate' : 'strong';
+    const spans = contributions.slice(0, 8).map(c => { const sp = locateQuote(c.term, text); return sp ? { s: sp[0], e: sp[1], kw: c.term, quote: text.slice(sp[0], sp[1]), contribution: c.contribution } : null; }).filter(Boolean);
+    const pt = M.classes[bestIdx];
+    const top = { pt, soc: ML_SOC[pt] || '—', confidence: Math.round(probs[bestIdx] * 1000) / 1000, evidence, tier, contributions: contributions.slice(0, 8), spans };
+    const candidates = order.slice(0, topN).map(i => ({ pt: M.classes[i], soc: ML_SOC[M.classes[i]] || '—', confidence: Math.round(probs[i] * 1000) / 1000 }));
+    return { top, candidates, ready: true };
+  }
+
   root.Engine = { sha256, canonical, GENESIS, eventHash, verifyChain, EVANS, computePair, computeAll, CAUSALITY, RECOMMEND, CATEGORIES, REC_T,
-    assessCausality, recommend, locateQuote, isNegated, verifyExtraction, checkSummaryCitations, VAL, CRITERIA, evaluateValidity, readSource, priority };
+    assessCausality, recommend, locateQuote, isNegated, verifyExtraction, checkSummaryCitations, VAL, CRITERIA, evaluateValidity, readSource, priority,
+    MEDDRA, MEDDRA_VERSION, classifyMedDRA, classifyMedDRA_ML, ML_SOC, mlTokenize };
   if (typeof module !== 'undefined') module.exports = root.Engine;
 })(typeof window !== 'undefined' ? window : globalThis);

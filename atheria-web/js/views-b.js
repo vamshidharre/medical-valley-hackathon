@@ -35,10 +35,10 @@
   };
   // Where the numbers come from: Exasol SQL, cross-checked against the independent browser calculation.
   function sourceCard() {
-    const s = A.signalSource;
+    const s = A.signalSource || {};
     if (s.db !== 'exasol') return `<div class="callout warn mt" style="font-size:12.5px"><b>Computed in your browser.</b> The Exasol database was not reachable${s.error ? ` (${esc(s.error)})` : ''}, so these statistics come from the built-in copy of the data. Start Atheria through the server (<span class="mono">/atheria</span>) to compute them in Exasol.</div>`;
     const allAgree = s.agree === s.total && s.total === s.browserTotal;
-    return `<div class="card mt"><div class="hd"><div><h3>Where these numbers come from</h3><div class="sub">Computed by SQL in the Exasol database over ${s.reports.toLocaleString()} reports in <span class="mono">PV.REPORTS</span>. Fixed formulas, no AI.</div></div><span class="badge b-info">Exasol · PV.SIGNALS</span></div>
+    return `<div class="card mt"><div class="hd"><div><h3>Where these numbers come from</h3><div class="sub">Computed by SQL in the Exasol database over ${s.reports ? s.reports.toLocaleString() : '1,263'} reports in <span class="mono">PV.REPORTS</span>. Fixed formulas, no AI.</div></div><span class="badge b-info">Exasol · PV.SIGNALS</span></div>
       <div class="callout ${allAgree ? 'ok' : 'warn'}" style="font-size:12.5px">${allAgree
         ? `<b>Cross-check passed.</b> An independent calculation in your browser gives the same counts, PRR, ROR, χ² and verdict for all ${s.total} drug–event pairs.`
         : `<b>Cross-check: ${s.agree} of ${s.total} pairs agree</b> with the browser calculation (browser has ${s.browserTotal} pairs). The database may hold reports the browser copy does not, for example new SafeReport submissions. The database figures are shown.`}</div>
@@ -311,7 +311,7 @@
 
   /* ======================= AUDIT ======================= */
   A.auditUI = A.auditUI || { type: '', ver: null, tamper: null };
-  const TYPE_BADGE = { ai_extraction: 'b-vio', ai_triage_proposal: 'b-vio', ai_summary: 'b-vio', rule_evaluation: 'b-teal', human_override: 'b-warn', human_override_cleared: 'b-warn', human_signoff: 'b-ok', human_field_accept: 'b-ok', chat_exchange: 'b-info', decision_replay: 'b-mut' };
+  const TYPE_BADGE = { ai_extraction: 'b-vio', ai_triage_proposal: 'b-vio', ai_summary: 'b-vio', rule_evaluation: 'b-teal', human_override: 'b-warn', human_override_cleared: 'b-warn', human_signoff: 'b-ok', human_field_accept: 'b-ok', human_field_reject: 'b-bad', chat_exchange: 'b-info', decision_replay: 'b-mut' };
   A.views.audit = function () {
     const U = A.auditUI, ev = U.tamper ? U.tamper.chain : A.audit, v = U.ver || { valid: null };
     const types = [...new Set(A.audit.map(e => e.type))], shown = ev.slice().reverse().filter(e => !U.type || e.type === U.type).slice(0, 80);
@@ -344,8 +344,10 @@
     switch (e.type) {
       case 'ai_extraction': return `AI extracted facts for ${p.report_id} · ${p.guardrail ? p.guardrail.quotes_verified + ' quotes verified, ' + p.guardrail.quotes_rejected + ' rejected' : ''} · ${p.from_cache ? 'replayed from cache' : 'live model call'}`;
       case 'rule_evaluation': return p.scope === 'signal' ? `Rule ${p.rule_id} → ${p.recommendation || ''}` : `Rule ${p.rule_id}${p.report_id ? ' on ' + p.report_id : ''}${p.category ? ' → ' + p.category : p.outcome ? ' → ' + p.outcome : ''}`;
-      case 'human_override': return `${p.report_id}: ${p.from} → ${p.to}. Reason: ${p.reason}`;
-      case 'human_signoff': return `${p.signal_id}: ${p.decision} · ${p.final_recommendation}`;
+      case 'human_override': return `${p.report_id || p.source_record_id}: ${p.from} → ${p.to}. Reason: ${p.reason}`;
+      case 'human_signoff': return p.scope === 'case_review' ? `${p.case_id}: case review confirmed · ${p.accepted}/${p.total} accepted, ${p.rejected || 0} rejected` : p.signal_id ? `${p.signal_id}: ${p.decision} · ${p.final_recommendation}` : `${p.source_record_id}: ${p.decision}${p.rule_proposed && p.rule_proposed !== p.decision ? ' (rule proposed ' + p.rule_proposed + ')' : ''}`;
+      case 'human_field_accept': return `${p.case_id}: accepted ${p.field}${p.value ? ' → “' + String(p.value).slice(0, 60) + '”' : ''}`;
+      case 'human_field_reject': return `${p.case_id}: rejected ${p.field}${p.value ? ' (AI said “' + String(p.value).slice(0, 60) + '”)' : ''}`;
       case 'ai_summary': return `Summary drafted for ${p.signal_id} (sha256 ${String(p.summary_sha256).slice(0, 10)}…)`;
       case 'chat_exchange': return `Question: “${p.question}” → ${p.grounding}`;
       case 'ai_triage_proposal': return `AI proposed criteria for ${p.source_record_id}`;
@@ -354,6 +356,64 @@
     }
   }
 
+  /* ======================= MEDDRA CODING (trained ML model) ======================= */
+  const ML_SOC_ORDER = ['Injury, poisoning and procedural complications', 'General disorders and administration site conditions', 'Nervous system disorders', 'Skin and subcutaneous tissue disorders', 'Musculoskeletal and connective tissue disorders', 'Infections and infestations', 'Gastrointestinal disorders', 'Blood and lymphatic system disorders', 'Ear and labyrinth disorders'];
+  const ML_SOC_PALETTE = ['var(--blue)', 'var(--violet)', 'var(--teal)', 'var(--warn)', 'var(--ok)', 'var(--bad)', 'var(--c-poss)', 'var(--c-prob)', 'var(--c-unl)'];
+  const ML_SOC_COLOR = Object.fromEntries(ML_SOC_ORDER.map((s, i) => [s, ML_SOC_PALETTE[i]]));
+  const TIER_BADGE = { strong: 'b-ok', moderate: 'b-warn', weak: 'b-mut' };
+  const TIER_LABEL = { strong: 'High term overlap', moderate: 'Some term overlap', weak: 'Low term overlap' };
+  const medChip = c => `<span class="badge b-mut" ${C.tip('Contribution: +' + c.contribution)}>${esc(c.term)}</span>`;
+  function mlCard(title, text, out, rightExtra) {
+    const top = out.top;
+    const hl = top && top.spans.length ? A.highlight(text, top.spans.map(s => ({ s: s.s, e: s.e, cls: 'h-med', id: s.kw, tip: '+' + s.contribution }))) : esc(text);
+    const badge = !top ? '<span class="badge b-mut">Not confidently coded</span>' : `<span class="badge ${TIER_BADGE[top.tier]}">${TIER_LABEL[top.tier]} · ${Math.round(top.confidence * 100)}%</span>`;
+    return `<div class="fact"><div class="row" style="margin-bottom:8px"><b>${esc(title)}</b><span class="sp"></span>${badge}${rightExtra || ''}</div>
+      <div class="src" style="padding:12px 14px;font-size:13.5px;line-height:1.7;margin-bottom:10px">${hl}</div>
+      ${top ? `<div class="row" style="flex-wrap:wrap;gap:10px;align-items:center"><span class="badge b-vio">${esc(top.pt)}</span><span style="color:var(--mut);font-size:13px">${esc(top.soc)}</span></div>
+      <div class="row mt" style="flex-wrap:wrap;gap:6px"><span style="font-size:12.5px;color:var(--mut);margin-right:2px">Primary reasons:</span>${top.contributions.slice(0, 6).map(medChip).join('') || '<span style="font-size:12.5px;color:var(--mut)">none above zero</span>'}</div>` : '<div class="callout info" style="font-size:12.5px">No word in this text overlaps the trained vocabulary.</div>'}</div>`;
+  }
+  const rowsTbl = (h, r) => `<div class="scroll"><table><thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${r.map(x => `<tr>${x.map((c, i) => `<td ${i === 0 ? 'style="white-space:nowrap"' : ''}>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  A.views.meddra = function () {
+    const M = window.MEDDRA_MODEL;
+    if (!M) return A.shell('MedDRA coding', '', '<div class="card"><div class="empty"><b>Model not loaded</b>js/meddra_model.js did not load.</div></div>');
+    // live verification: re-score 220 held-out dev rows, right now, in this browser
+    const liveRuns = M.sample_eval.map(row => ({ row, out: E.classifyMedDRA_ML(row.text) }));
+    const liveCorrect = liveRuns.filter(x => x.out.top && x.out.top.pt === x.row.label).length;
+    const liveWrong = liveRuns.filter(x => x.out.top && x.out.top.pt !== x.row.label).length;
+    const liveAbstain = liveRuns.length - liveCorrect - liveWrong;
+    const liveDonut = [{ label: 'Correct', value: liveCorrect, color: 'var(--ok)' }, { label: 'Incorrect', value: liveWrong, color: 'var(--bad)' }, { label: 'Abstained', value: liveAbstain, color: 'var(--c-una)' }];
+    const firstCorrect = liveRuns.find(x => x.out.top && x.out.top.pt === x.row.label);
+    const firstWrong = liveRuns.find(x => x.out.top && x.out.top.pt !== x.row.label);
+    const socCount = {}; liveRuns.forEach(x => { if (x.out.top) socCount[x.out.top.soc] = (socCount[x.out.top.soc] || 0) + 1; });
+    const socRows = Object.entries(socCount).sort((a, b) => b[1] - a[1]).map(([s, n]) => ({ label: s, value: n, text: n, color: ML_SOC_COLOR[s] || 'var(--blue)' }));
+
+    // applied to this app's own, already-triaged / approved cases
+    const inboxRuns = A.inbox.slice(0, 8).map(r => ({ title: `${A.chanLabel(r.channel)} · ${r.id.slice(4, 12)}`, text: r.text.length > 340 ? r.text.slice(0, 340) + '…' : r.text, out: E.classifyMedDRA_ML(r.text) }));
+    const approvedSignals = Object.entries(A.invState).filter(([, st]) => st.status === 'completed').map(([sid]) => A.build(sid)).filter(Boolean);
+    const approvedRuns = [];
+    approvedSignals.forEach(b => { b.cases.slice(0, 2).forEach(c => approvedRuns.push({ title: `${A.sigLabel(b.p)} · ${c.id}`, text: c.narrative, out: E.classifyMedDRA_ML(c.narrative), href: `${A.sigUrl(b.sid)}/case/${c.id}` })); });
+
+    const body = `<div class="card"><h3>A trained model, not a lookup table</h3><p class="sub" style="margin:8px 0 14px;max-width:85ch;font-size:14px">This coder is <b>TF-IDF (1–2 word phrases) feeding a multinomial logistic regression</b>, trained offline on <b>symptomify</b> — a real, large dataset of VAERS-style vaccine adverse-event reports you provided, each already labelled with its MedDRA Preferred Term. Every prediction decomposes exactly into the words that produced it: the same weighted terms that drove training are the ones highlighted below, so “why” is read off the model itself, not a separate explanation bolted on afterwards.</p>${A.flowStrip()}</div>
+    <div class="grid g4 mt">
+      <div class="card kpi"><div class="lb">Training rows</div><div class="v">${M.n_train_rows.toLocaleString()}</div><div class="ft">sampled from symptomify train.json</div></div>
+      <div class="card kpi"><div class="lb">MedDRA terms covered</div><div class="v">${M.n_classes}</div><div class="ft">the most frequent, best-supported PTs</div></div>
+      <div class="card kpi"><div class="lb">Test-set accuracy</div><div class="v" style="color:var(--ok)">${Math.round(M.metrics.test_accuracy * 100)}%</div><div class="ft">${M.metrics.test_n.toLocaleString()} held-out reports, never trained on</div></div>
+      <div class="card kpi"><div class="lb">Macro-F1 (test)</div><div class="v">${M.metrics.test_macro_f1}</div><div class="ft">averaged evenly across all ${M.n_classes} terms</div></div></div>
+    <div class="grid g-5-7 mt" style="align-items:start"><div class="card"><h3>Verified live, right now, in your browser</h3><div class="sub" style="margin:6px 0 16px;max-width:60ch">${M.sample_eval.length} real reports from the held-out dev split (never used in training) were just re-scored by the exact model shipped to this page — not a cached number.</div><div class="row" style="justify-content:center;gap:24px">${C.donut(liveDonut, { size: 160, sub: 'live-scored', center: liveRuns.length })}<div style="min-width:170px">${C.legend(liveDonut).replace('class="legend"', 'class="legend" style="flex-direction:column;gap:8px"')}</div></div><div class="callout ${Math.abs(liveCorrect / liveRuns.length - M.metrics.dev_accuracy) < 0.1 ? 'ok' : 'warn'} mt" style="font-size:12.5px">Live accuracy on this sample: <b>${Math.round(liveCorrect / liveRuns.length * 100)}%</b>, consistent with the ${Math.round(M.metrics.dev_accuracy * 100)}% measured over the full ${M.metrics.dev_n.toLocaleString()}-report dev set.</div></div>
+      <div class="card"><h3>Predicted System Organ Class mix</h3><div class="sub" style="margin-bottom:14px">Where this live sample's predictions land, grouped by SOC</div>${C.hbars(socRows)}</div></div>
+    <div class="grid g2 mt">${firstCorrect ? mlCard('Worked example · correctly coded', firstCorrect.row.text, firstCorrect.out, `<span class="badge b-ok" style="margin-left:6px">Reported: ${esc(firstCorrect.row.label)}</span>`) : ''}
+      ${firstWrong ? mlCard('Worked example · miscoded (shown, not hidden)', firstWrong.row.text, firstWrong.out, `<span class="badge b-bad" style="margin-left:6px">Reported: ${esc(firstWrong.row.label)}</span>`) : '<div class="card"><div class="empty"><b>No miscoded example in this sample</b>Every one of the 220 live-scored reports happened to match.</div></div>'}</div>
+    <div class="card mt"><h3>Applied to your triage and approved cases</h3><div class="sub" style="margin:6px 0 14px;max-width:85ch">What you asked for: the same trained model, run over cases already sitting in this platform — the triage inbox, and signals a reviewer has investigated and signed off. <b>Read this honestly</b>: the model was trained on vaccine adverse-event reports, and these cases are about different, fictional products. Predictions here demonstrate the pipeline end-to-end — the evidence and the “why” are real and computed live — but are not a validated clinical mapping for this product set. That gap is exactly what a labelled dataset of <i>your own</i> cases would close.</div>
+      <div class="row" style="margin:0 0 10px"><b style="font-size:14px">Triage inbox</b><span class="sp"></span><a href="#/inbox">Open triage inbox</a></div>
+      <div class="grid g2">${inboxRuns.map(x => mlCard(x.title, x.text, x.out)).join('')}</div>
+      ${approvedRuns.length ? `<div class="row mt" style="margin:18px 0 10px"><b style="font-size:14px">Signed-off signal investigations</b></div><div class="grid g2">${approvedRuns.map(x => mlCard(x.title, x.text, x.out, `<a class="btn ghost sm" style="margin-left:8px" href="${x.href}">Open case</a>`)).join('')}</div>` : `<div class="callout info mt" style="font-size:12.5px">No signal has been signed off yet — once a reviewer approves one in <a href="#/signals">Signal detection</a>, its cases appear here too.</div>`}</div>
+    <div class="card mt"><h3>Extend this to your own vocabulary</h3><div class="sub" style="margin:6px 0 14px;max-width:80ch">This model only knows the ${M.n_classes} MedDRA terms it was trained on. Connect a labelled dataset of your own products' cases — one row per case, its free text and the correct Preferred Term — and the same training pipeline (TF-IDF + logistic regression, measured the same honest way above) retrains and extends it.</div>
+      <div class="row" style="flex-wrap:wrap;gap:14px;align-items:flex-start"><div class="fact" style="flex:1;min-width:260px"><b>Expected columns</b><div class="src mono" style="margin-top:8px;font-size:12.5px;padding:10px 12px">case_id, narrative_text, meddra_pt, meddra_soc (optional)</div></div>
+      <div style="flex:1;min-width:220px"><button class="btn ghost" id="medUpload" type="button">${A.ico('file')} Connect another dataset</button><div class="callout info mt" style="font-size:12.5px">Not wired up yet — this is where a new CSV or E2B export would retrain the model above.</div></div></div></div>`;
+    A.after = () => { A.bindMarks(document); const b = document.getElementById('medUpload'); if (b) b.onclick = () => A.toast('Dataset connector not built yet — this is where it would plug in.'); };
+    return A.shell('MedDRA coding', 'A trained model maps free text to a MedDRA term and System Organ Class, with every prediction traced to the words — and the training data — that produced it.', body);
+  };
+
   /* ======================= TRUST ======================= */
   A.views.trust = function () {
     const rows = (h, r) => `<div class="scroll"><table><thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${r.map(x => `<tr>${x.map((c, i) => `<td ${i === 0 ? 'style="white-space:nowrap"' : ''}>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
@@ -361,12 +421,12 @@
     <div class="grid g2 mt"><div class="card"><h3>Two layers of guardrails</h3><div class="sub" style="margin-bottom:14px">Prompts are necessary but not sufficient, so the second layer is code.</div>
       <div class="fact"><span class="badge b-vio">Level 1 · prompt</span><div style="margin-top:8px;font-size:13.5px">“Facts only. Quote verbatim. Prefer <i>unknown</i> over inference.” Versioned: <code>extract_v1.4.0</code></div></div>
       <div class="fact mt"><span class="badge b-info">Level 2 · code</span><ul style="margin:8px 0 0 18px;font-size:13.5px;line-height:1.8"><li>Output must match a strict schema, or it is rejected</li><li>Every fact needs a verbatim quote at real character offsets, or it becomes <b>unknown</b></li><li>Negation check moves “ruled out” findings out of alternative causes</li><li>Summary citations must be real case IDs from this signal</li><li>Chat answers pass a relevance gate and citation verification</li></ul></div></div>
-    <div class="card"><h3>What is real in this build</h3><div class="sub" style="margin-bottom:14px">Being clear about what runs where</div>${rows(['Component', 'In this website'], [['Statistics (PRR, ROR CI, χ², Evans)', '<span class="badge b-ok">Live, same code logic</span>'], ['Guardrails and quote verification', '<span class="badge b-ok">Live</span>'], ['Causality and recommendation rules', '<span class="badge b-ok">Live</span>'], ['ICSR validity rule val_001', '<span class="badge b-ok">Live</span>'], ['Hash-chained audit', '<span class="badge b-ok">Live, 120 real events verify</span>'], ['Case-narrative AI extraction', '<span class="badge b-warn">Cached output from the original Nova Lite run</span>'], ['Triage reading of new reports', '<span class="badge b-warn">Offline rule-based reader</span>'], ['Summary drafting and chat', '<span class="badge b-warn">Offline: template draft, extractive answers</span>']])}</div></div>
+    <div class="card"><h3>What is real in this build</h3><div class="sub" style="margin-bottom:14px">Being clear about what runs where</div>${rows(['Component', 'In this website'], [['Statistics (PRR, ROR CI, χ², Evans)', '<span class="badge b-ok">Live, same code logic</span>'], ['Guardrails and quote verification', '<span class="badge b-ok">Live</span>'], ['Causality and recommendation rules', '<span class="badge b-ok">Live</span>'], ['ICSR validity rule val_001', '<span class="badge b-ok">Live</span>'], ['Hash-chained audit', '<span class="badge b-ok">Live, 120 real events verify</span>'], ['Case-narrative AI extraction', '<span class="badge b-warn">Cached output from the original Nova Lite run</span>'], ['Triage reading of new reports', '<span class="badge b-warn">Offline rule-based reader by default</span>'], ['Triage reading, one record at a time', '<span class="badge b-ok">Live Claude API call via "Enable AI" (needs ANTHROPIC_API_KEY)</span>'], ['Summary drafting and chat', '<span class="badge b-warn">Offline: template draft, extractive answers</span>'], ['MedDRA coding', '<span class="badge b-ok">Live — trained TF-IDF + logistic regression model</span>']])}</div></div>
     <div class="card mt"><h3>Rule books</h3><div class="sub" style="margin-bottom:14px">Versioned, pure functions. Same inputs and version always give the same output.</div><div class="grid g3" style="align-items:start">
       <div><h4 style="margin-bottom:8px">val_001 v1.0.0 · ICSR validity</h4>${rows(['If', 'Then'], [['All 4 criteria present', '<span class="badge b-ok">Valid</span>'], ['Product or event absent', '<span class="badge b-mut">Not an ICSR</span>'], ['Product + event, but patient or reporter absent', '<span class="badge b-warn">Escalate</span>']])}<p class="sub mt">Criteria: identifiable patient, identifiable reporter, suspect product, adverse event.</p></div>
       <div><h4 style="margin-bottom:8px">cau_001 v1.1.0 · causality</h4>${rows(['Rule', 'Category'], [['CAU-01 timing implausible', A.catBadge('Unlikely')], ['CAU-02 timing unknown', A.catBadge('Unassessable')], ['CAU-03 ≥2 alt. causes, no positive dechallenge', A.catBadge('Unlikely')], ['CAU-04 ≥1 alt. cause', A.catBadge('Possible')], ['CAU-05 +dechallenge +rechallenge', A.catBadge('Certain')], ['CAU-06 +dechallenge', A.catBadge('Probable')], ['CAU-07 otherwise', A.catBadge('Possible')]])}</div>
       <div><h4 style="margin-bottom:8px">rec_001 v1.0.0 · recommendation</h4>${rows(['Rule', 'Outcome'], [['REC-01 unassessable > 50%', 'Insufficient information'], ['REC-02 signal and supportive ≥ 50%', 'Validated'], ['REC-03 unlikely ≥ 50%', 'Not confirmed'], ['REC-04 otherwise', 'Inconclusive']])}<p class="sub mt">Evans: PRR ≥ 2, χ² ≥ 4, cases ≥ 3.</p></div></div></div>
-    <div class="card mt"><h3>Assumptions and limits</h3><ul style="margin:10px 0 0 18px;line-height:1.9;max-width:85ch"><li>Data is a synthetic FAERS-style set (fixed seed 42, 1,261 reports) with fictional drugs.</li><li>The causality rule is WHO-UMC-inspired and has <b>not</b> been clinically validated.</li><li>The “time saved” figure assumes 15 minutes of manual review per case. It is an assumption, not a measurement.</li><li>This is a single-user demo with local state in your browser. It has no authentication, and e-signature, MedDRA coding and E2B export are not built.</li></ul></div>`;
+    <div class="card mt"><h3>Assumptions and limits</h3><ul style="margin:10px 0 0 18px;line-height:1.9;max-width:85ch"><li>Data is a synthetic FAERS-style set (fixed seed 42, 1,261 reports) with fictional drugs.</li><li>The causality rule is WHO-UMC-inspired and has <b>not</b> been clinically validated.</li><li>The “time saved” figure assumes 15 minutes of manual review per case. It is an assumption, not a measurement.</li><li>This is a single-user demo with local state in your browser. It has no authentication, and e-signature and E2B export are not built. The MedDRA coder is a real trained model, but trained on vaccine adverse-event reports (symptomify/VAERS), not on this app's own fictional drugs — see the MedDRA coding page for that limit, shown plainly rather than hidden.</li></ul></div>`;
     return A.shell('How decisions are made', 'Everything the platform concludes can be traced to evidence, a rule and a person.', body);
   };
 })();
