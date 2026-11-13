@@ -120,8 +120,11 @@ LOCATE_TOOL = {"name": "locate", "description": "Report where each given text is
 LOCATE_SYSTEM = """You are given a photo of a medicine pack and some text values read from it. For each value, find the exact
 place where it is printed and return a TIGHT rectangle around only that text: normally one line or a short phrase, never
 neighbouring lines. Coordinates are fractions 0-1 of the whole image width and height, origin top-left (x0,y0 top-left
-corner, x1,y1 bottom-right corner). If a value is printed vertically or rotated, box the rotated text. Only report values
-you can actually see. Use the locate tool."""
+corner, x1,y1 bottom-right corner).
+CRITICAL RULES:
+1. The photo often has empty background (table, floor, counter, hands) around the medicine pack or blister. Every box MUST be located strictly ON the medicine pack/blister itself, NEVER in the surrounding background!
+2. If text is printed vertically or sideways (common on blister foils), return a tall rectangle around the vertical letters.
+3. Only report values you can actually see on the packaging. Use the locate tool."""
 
 
 def locate_boxes(b64: str, mt: str, values: dict) -> dict:
@@ -285,29 +288,130 @@ def _parse_text(text: str, parsed: dict) -> dict:
 
 OCR_ENGINE = os.getenv("OCR_ENGINE", "claude").lower()      # claude (default) | nemotron
 
-VISION_SYSTEM = """You are the OCR engine of a medicine-safety app. Look at the photo of a medicine pack, strip or leaflet.
+VISION_SYSTEM = """You are the OCR engine of a medicine-safety app. Look at the photo of a medicine pack, strip, prescription label, or leaflet.
 1. Transcribe EVERY piece of text you can see, exactly as printed, one line per text line. Include text printed
    vertically, sideways, upside down, curved around the pack, on coloured banners, on foil, and tiny print.
 2. Then fill the form from that text.
 Also give `boxes`: for name, dose, batch and manufacturer, a tight rectangle around the printed text the value came
-from (x0,y0 = top-left, x1,y1 = bottom-right, as fractions 0-1 of the whole image). For dose use the line that states
-the strength; for text printed vertically, give the tall rectangle around it. Be precise: the boxes are drawn on the photo.
+from (x0,y0 = top-left, x1,y1 = bottom-right, as fractions 0-1 of the whole image).
+Keep all boxes strictly ON the physical medicine pack/blister/label, NEVER on the surrounding table or background!
+For text printed vertically, give the tall rectangle covering the vertical letters. Be precise: the boxes are drawn on the photo.
 Report the result with the fill_form tool.
-- name: brand name as printed (if none, the generic name).
-- dose: active ingredient(s) with strength and dosage form, e.g. "Paracetamol 650 mg tablet".
-- batch: the batch / lot number (labels like Batch, B.No, B. No., Lot, BN). Not expiry, mfg date, MRP or licence numbers.
-- manufacturer: the company that manufactured or marketed it (after Mfd./Manufactured/Marketed by).
-Use "" for anything you cannot read clearly. Never invent or guess values. If there is no readable text, return empty strings."""
+
+RULES FOR EXTRACTION:
+- name: The brand name or active substance name ONLY (e.g. "Metoprolol", "Augmentin", "Paracetamol", "Calpol").
+  DO NOT include the dosage or form in the name (e.g. from "METOPROLOL TAB 25MG TAB", name is "Metoprolol").
+- dose: The strength and formulation (e.g. "25 mg tablet", "125 mg/5 mL", "500 mg").
+  CRITICAL: Do NOT confuse patient dosing instructions (e.g. "TAKE 1 TABLET TWICE A DAY") with medicine strength! Strength must contain a strength metric (mg, mcg, g, ml, %).
+- batch: The manufacturer production batch / lot number (e.g. Lot: 12345, Batch: XYZ).
+  CRITICAL: On prescription labels, "Rx#", "Rx Number", "Order #", or "Refills" are pharmacy prescription codes, NOT manufacturer batch numbers! Return "" (empty string) if only an Rx# is present.
+- manufacturer: The pharmaceutical company that produced the medicine (e.g. GSK, Novartis, Pfizer, Teva).
+  CRITICAL: Hospitals, medical centers, pharmacies, and clinics (e.g. VAMC, VA Medical Center, CVS, Walgreens, Boots, Apotheke) are dispensing facilities, NOT the pharmaceutical manufacturer. Return "" (empty string) if only a hospital or pharmacy is named.
+
+Use "" for anything you cannot read clearly or that is not present on the packaging. Never invent or guess values. If there is no readable text, return empty strings."""
 
 
-def _prep_for_claude(data: bytes) -> tuple[str, str]:
-    """Normalise any upload to an upright JPEG (<= 2000px) that Claude accepts."""
+def _prep_for_claude(data: bytes) -> tuple[str, str, bytes]:
+    """Normalise any upload to an upright JPEG (<= 2000px) that Claude and Textract accept."""
     import io
     from PIL import Image, ImageOps
     img = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
     img.thumbnail((2000, 2000))
-    buf = io.BytesIO(); img.save(buf, "JPEG", quality=90)
-    return base64.b64encode(buf.getvalue()).decode(), "image/jpeg"
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=90)
+    jpeg_bytes = buf.getvalue()
+    return base64.b64encode(jpeg_bytes).decode(), "image/jpeg", jpeg_bytes
+
+
+def _match_textract_boxes(jpeg_bytes: bytes, values: dict) -> dict:
+    if not (os.getenv("AWS_ACCESS_KEY_ID") and os.getenv("AWS_SECRET_ACCESS_KEY")):
+        return {}
+    try:
+        import boto3
+        textract = boto3.client(
+            "textract",
+            region_name=os.getenv("AWS_REGION", "us-west-2"),
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            aws_session_token=os.getenv("AWS_SESSION_TOKEN"),
+        )
+        resp = textract.detect_document_text(Document={"Bytes": jpeg_bytes})
+        blocks = resp.get("Blocks", [])
+        lines = [b for b in blocks if b.get("BlockType") == "LINE"]
+        words = [b for b in blocks if b.get("BlockType") == "WORD"]
+        matched = {}
+
+        # 1. Match Medicine Name: prefer word-level match for core drug substance
+        name_val = values.get("name", "").strip()
+        if name_val:
+            core_name = re.sub(r"\b(?:tab|tablets?|caps?|capsules?|oral|suspension|\d+\s*mg).*", "", name_val, flags=re.I).strip()
+            target = re.sub(r"[^\w]", "", (core_name or name_val).lower())
+            for w in words:
+                wt = re.sub(r"[^\w]", "", w.get("Text", "").lower())
+                if wt and (wt == target or (len(wt) >= 5 and (wt.startswith(target[:5]) or target.startswith(wt[:5])))):
+                    bb = w["Geometry"]["BoundingBox"]
+                    matched["name"] = {"x0": round(bb["Left"], 4), "y0": round(bb["Top"], 4),
+                                       "x1": round(bb["Left"] + bb["Width"], 4), "y1": round(bb["Top"] + bb["Height"], 4)}
+                    break
+
+        # 2. Match Dose: prioritize strength metrics (e.g. 25MG) over instruction lines
+        dose_val = values.get("dose", "").strip()
+        if dose_val:
+            m_str = re.search(r"(\d+(?:\.\d+)?)\s*(mg|mcg|g|ml|iu|%)", dose_val, re.I)
+            if m_str:
+                num, unit = m_str.group(1).lower(), m_str.group(2).lower()
+                for w in words:
+                    wt = re.sub(r"[^\w]", "", w.get("Text", "").lower())
+                    if num in wt and unit in wt:
+                        bb = w["Geometry"]["BoundingBox"]
+                        matched["dose"] = {"x0": round(bb["Left"], 4), "y0": round(bb["Top"], 4),
+                                           "x1": round(bb["Left"] + bb["Width"], 4), "y1": round(bb["Top"] + bb["Height"], 4)}
+                        break
+
+        # 3. Match Batch (skip if Rx# prescription number)
+        batch_val = values.get("batch", "").strip()
+        if batch_val and not re.search(r"\b(?:rx|refill|order)\b", batch_val, re.I):
+            clean_b = re.sub(r"[^\w]", "", batch_val.lower())
+            for l in lines:
+                lt = re.sub(r"[^\w]", "", l.get("Text", "").lower())
+                if clean_b and clean_b in lt and "rx" not in lt:
+                    bb = l["Geometry"]["BoundingBox"]
+                    matched["batch"] = {"x0": round(bb["Left"], 4), "y0": round(bb["Top"], 4),
+                                        "x1": round(bb["Left"] + bb["Width"], 4), "y1": round(bb["Top"] + bb["Height"], 4)}
+                    break
+
+        # 4. Match Manufacturer (skip if hospital/dispensary)
+        mfr_val = values.get("manufacturer", "").strip()
+        if mfr_val and not re.search(r"\b(?:vamc|facility|hospital|pharmacy|clinic|center|dispensary)\b", mfr_val, re.I):
+            clean_m = re.sub(r"[^\w]", "", mfr_val.lower())
+            for l in lines:
+                lt = re.sub(r"[^\w]", "", l.get("Text", "").lower())
+                if clean_m and clean_m in lt:
+                    bb = l["Geometry"]["BoundingBox"]
+                    matched["manufacturer"] = {"x0": round(bb["Left"], 4), "y0": round(bb["Top"], 4),
+                                                "x1": round(bb["Left"] + bb["Width"], 4), "y1": round(bb["Top"] + bb["Height"], 4)}
+                    break
+
+        # 5. General fallback for unmatched fields
+        for k in ("name", "dose", "batch", "manufacturer"):
+            if k not in matched and values.get(k):
+                val_clean = re.sub(r"[^\w\s]", "", values[k].lower()).strip()
+                if not val_clean:
+                    continue
+                for l in lines:
+                    txt_clean = re.sub(r"[^\w\s]", "", l.get("Text", "").lower()).strip()
+                    if not txt_clean:
+                        continue
+                    if val_clean in txt_clean or (len(txt_clean) >= 4 and txt_clean in val_clean):
+                        bb = l["Geometry"]["BoundingBox"]
+                        matched[k] = {"x0": round(bb["Left"], 4), "y0": round(bb["Top"], 4),
+                                      "x1": round(bb["Left"] + bb["Width"], 4), "y1": round(bb["Top"] + bb["Height"], 4)}
+                        break
+
+        return matched
+    except Exception as e:
+        print("Textract box matching fallback:", e)
+        return {}
 
 
 @app.post("/api/extract")
@@ -321,7 +425,7 @@ async def extract(file: UploadFile = File(...)):
         if not claude():
             raise HTTPException(503, "Claude OCR needs ANTHROPIC_API_KEY in safereport/.env")
         try:
-            b64, mt = _prep_for_claude(data)
+            b64, mt, jpeg_bytes = _prep_for_claude(data)
         except Exception:
             raise HTTPException(400, "File is not a readable image")
         try:
@@ -355,6 +459,36 @@ async def extract(file: UploadFile = File(...)):
                 for k in redo:
                     if k in boxes and _suspicious(boxes[k]):
                         boxes.pop(k)
+        # Post-processing: clean prescription label confusion
+        # 1. Strip Rx# from batch
+        if out["batch"] and (re.search(r"rx#?\s*" + re.escape(out["batch"]), text, re.I) or re.search(r"\b(?:rx|refill|order)\b", out["batch"], re.I)):
+            out["batch"] = ""
+            boxes.pop("batch", None)
+        # 2. Strip dispensing clinics/hospitals from manufacturer
+        if out["manufacturer"] and re.search(r"\b(?:vamc|facility|hospital|pharmacy|clinic|center|dispensary)\b", out["manufacturer"], re.I):
+            out["manufacturer"] = ""
+            boxes.pop("manufacturer", None)
+        # 3. Clean dose if it was just 'TABLET' or dosing instruction
+        if out["dose"] and not re.search(r"\d+\s*(?:mg|mcg|g|ml|iu|%)", out["dose"], re.I):
+            m_dose = re.search(r"(\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|iu))\s*(?:tab(?:let)?|cap(?:sule)?)?", text, re.I)
+            if m_dose:
+                out["dose"] = m_dose.group(0).strip()
+        # 4. Clean name if dosage was swallowed into it
+        if out["name"]:
+            m_name = re.match(r"^([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(?:tab|tablets?|cap|capsules?|oral|suspension|\d+\s*mg).*", out["name"], re.I)
+            if m_name and len(m_name.group(1)) > 3:
+                out["name"] = m_name.group(1).strip()
+
+        # Refine boxes with exact pixel coordinates from Amazon Textract if available
+        try:
+            tb_boxes = _match_textract_boxes(jpeg_bytes, out)
+            for k in ("name", "dose", "batch", "manufacturer"):
+                if not out.get(k):
+                    boxes.pop(k, None)
+                elif tb_boxes.get(k):
+                    boxes[k] = tb_boxes[k]
+        except Exception as e:
+            print("Textract refine error:", e)
         return {**out, "boxes": boxes, "source": "claude-vision", "engine": "Claude Haiku vision", "raw_text": text, "warnings": []}
     # --- optional engine: Nemotron OCR v2 (Hugging Face Space / self-hosted) + Claude to fill the form ---
     try:

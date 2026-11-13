@@ -211,16 +211,21 @@ async function runExtract({ file, qr, label }) {
   let med = null, err = '';
   const readFail = 'We could not read this photo right now. Please try again, or enter the details yourself.';
   if (file) {                                   // a real photo is NEVER replaced by sample data
-    if (!S.canExtract) err = readFail;
-    else {
-      try {
-        const fd = new FormData(); fd.append('file', file);
-        const r = await fetch('/api/extract', { method: 'POST', body: fd });
-        if (r.ok) {
-          const j = await r.json();
-          med = { name: j.name, dose: j.dose, batch: j.batch, mfr: j.manufacturer, boxes: j.boxes || {}, source: 'Read from your photo' };
-        } else err = r.status === 422 ? 'We could not find any readable text. Try again in good light with the label filling the frame.' : readFail;
-      } catch { err = readFail; }
+    try {
+      const fd = new FormData(); fd.append('file', file);
+      const r = await fetch('/api/extract', { method: 'POST', body: fd });
+      if (r.ok) {
+        const j = await r.json();
+        med = { name: j.name, dose: j.dose, batch: j.batch, mfr: j.manufacturer, boxes: j.boxes || {}, source: 'Read from your photo' };
+        S.canExtract = true;
+      } else {
+        const errJson = await r.json().catch(() => ({}));
+        console.warn('Extract API error:', r.status, errJson);
+        err = r.status === 422 ? 'We could not find any readable text. Try again in good light with the label filling the frame.' : (errJson.detail || readFail);
+      }
+    } catch (e) {
+      console.error('Fetch /api/extract error:', e);
+      err = readFail;
     }
   } else {
     const s = qr || SAMPLES[sampleN++ % SAMPLES.length];
