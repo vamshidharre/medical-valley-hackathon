@@ -212,7 +212,7 @@
       const res = await fetch('/api/pv/reports?source=safereport');
       if (!res.ok) return;
       const j = await res.json();
-      for (const r of (j.reports || [])) {
+      for (const r of (j.reports || []).slice().reverse()) {
         if (r.narrative && !A.inbox.some(x => x.id === r.report_id || (x.meta && x.meta.report_id === r.report_id))) {
           A.triage(r.narrative, 'safereport', { report_id: r.report_id, drug: r.drug, event: r.event_term, live_db: true });
         }
