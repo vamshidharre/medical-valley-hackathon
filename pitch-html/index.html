@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sovereign Health · Pitch</title>
+<style>
+/* latin-ext */
+@font-face {
+  font-family: 'Caladea';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/kJExBugZ7AAjhybUvR1N9vo3lOc.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Caladea';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/kJExBugZ7AAjhybUvR1N-Po3.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Caladea';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/kJE0BugZ7AAjhybUvR1FQ98ipcZyNZ0.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Caladea';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/kJE0BugZ7AAjhybUvR1FQ98iq8Zy.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Caladea';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/kJEzBugZ7AAjhybUvRZ9-uIz.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Caladea';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/kJEzBugZ7AAjhybUvRh9-g.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Caladea';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/kJE2BugZ7AAjhybUtaNY79MSqd52.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Caladea';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/kJE2BugZ7AAjhybUtaNY790SqQ.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Carlito';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/3Jn_SDPw3m-pk039DDKxQ10AbuE.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Carlito';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/3Jn_SDPw3m-pk039DDKxSl0AbuE.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Carlito';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/3Jn_SDPw3m-pk039DDKxQl0AbuE.woff2) format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Carlito';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/3Jn_SDPw3m-pk039DDKxTV0AbuE.woff2) format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Carlito';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/3Jn_SDPw3m-pk039DDKxQV0AbuE.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Carlito';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/3Jn_SDPw3m-pk039DDKxQF0AbuE.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Carlito';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/3Jn_SDPw3m-pk039DDKxTl0A.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Carlito';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/3Jn6SDPw3m-pk039DDK59XgVXMBG6Oo.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Carlito';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/3Jn6SDPw3m-pk039DDK59XgVVcBG6Oo.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Carlito';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/3Jn6SDPw3m-pk039DDK59XgVXcBG6Oo.woff2) format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Carlito';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/3Jn6SDPw3m-pk039DDK59XgVUsBG6Oo.woff2) format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Carlito';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/3Jn6SDPw3m-pk039DDK59XgVXsBG6Oo.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Carlito';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/3Jn6SDPw3m-pk039DDK59XgVX8BG6Oo.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Carlito';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/3Jn6SDPw3m-pk039DDK59XgVUcBG.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Carlito';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/3Jn9SDPw3m-pk039DDqBTEUE.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Carlito';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/3Jn9SDPw3m-pk039DDOBTEUE.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Carlito';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/3Jn9SDPw3m-pk039DDuBTEUE.woff2) format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Carlito';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/3Jn9SDPw3m-pk039DDSBTEUE.woff2) format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Carlito';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/3Jn9SDPw3m-pk039DDiBTEUE.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Carlito';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/3Jn9SDPw3m-pk039DDmBTEUE.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Carlito';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(assets/fonts/3Jn9SDPw3m-pk039DDeBTA.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Carlito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/3Jn4SDPw3m-pk039BIykWXclU9hC.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Carlito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/3Jn4SDPw3m-pk039BIykWX4lU9hC.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Carlito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/3Jn4SDPw3m-pk039BIykWXYlU9hC.woff2) format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Carlito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/3Jn4SDPw3m-pk039BIykWXklU9hC.woff2) format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Carlito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/3Jn4SDPw3m-pk039BIykWXUlU9hC.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Carlito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/3Jn4SDPw3m-pk039BIykWXQlU9hC.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Carlito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(assets/fonts/3Jn4SDPw3m-pk039BIykWXolUw.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html, body { margin: 0; height: 100%; background: #111; overflow: hidden; }
+#stage { position: fixed; left: 50%; top: 50%; width: 1280px; height: 720px; transform-origin: 0 0; background: #fff; }
+.slide { display: none; position: absolute; inset: 0; }
+.slide.on { display: block; }
+.frame { position: relative; width: 1280px; height: 720px; }
+video { cursor: pointer; }
+#pill { position: fixed; left: 16px; bottom: 14px; padding: 6px 14px; border-radius: 20px; background: rgba(16,38,28,.82); color: #fff; font: 700 15px/1 Carlito, Calibri, sans-serif; letter-spacing: .5px; display: none; z-index: 5; }
+#pill.show { display: block; }
+#hint { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); padding: 8px 18px; border-radius: 20px; background: rgba(16,38,28,.82); color: #fff; font: 400 16px/1 Carlito, Calibri, sans-serif; z-index: 5; transition: opacity .6s; }
+#hint.hide { opacity: 0; pointer-events: none; }
+body.idle { cursor: none; }
+body.idle video { cursor: none; }
+@keyframes st2{0%,10%{opacity:0}13%,100%{opacity:1}}
+@keyframes st3{0%,20%{opacity:0}23%,100%{opacity:1}}
+@keyframes painPulse{0%,100%{opacity:0;transform:scale(.85)}45%{opacity:.75;transform:scale(1.12)}}
+@keyframes boltFlash{0%,100%{opacity:0;transform:translate(0,0) scale(.8)}20%{opacity:1;transform:translate(-2px,1px) scale(1.1)}35%{opacity:.4;transform:translate(2px,-1px) scale(1)}50%{opacity:1;transform:translate(-1px,0) scale(1.05)}70%{opacity:0}}
+@keyframes spotIn{0%,23%{opacity:0;transform:scale(0)}26%{opacity:1;transform:scale(1.6)}29%,100%{opacity:1;transform:scale(1)}}
+@keyframes flush{0%,23%{opacity:0}35%,100%{opacity:.55}}
+.st2{animation:st2 10s ease-in-out 1 both}
+.st3{animation:st3 10s ease-in-out 1 both}
+.pain-glow{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(235,60,50,.55) 0%,rgba(235,60,50,.18) 45%,rgba(235,60,50,0) 70%);animation:painPulse 1.4s ease-in-out infinite;pointer-events:none}
+.bolt{position:absolute;animation:boltFlash 1.4s ease-in-out infinite;pointer-events:none}
+.spot{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#E0403A;box-shadow:0 0 0 2px rgba(240,100,90,.4);animation:spotIn 10s ease-out 1 both;pointer-events:none}
+.flush{position:absolute;width:56px;height:42px;margin:-21px 0 0 -28px;border-radius:50%;background:radial-gradient(ellipse,rgba(240,90,80,.7),rgba(240,90,80,0) 70%);animation:flush 10s ease-in-out 1 both;pointer-events:none}
+@media (prefers-reduced-motion: reduce){.st2,.st3{animation:none;opacity:1}.pain-glow,.bolt{animation:none;opacity:.6}.spot{animation:none;opacity:1}.flush{animation:none;opacity:.55}}
+@keyframes capGreen{0%,14%{transform:translate(-19px,9.5px) rotate(-8deg)}32%{transform:translate(1px,-.5px) rotate(1deg)}38%,86%{transform:none}96%,100%{transform:translate(-19px,9.5px) rotate(-8deg)}}
+@keyframes capClear{0%,14%{transform:translate(19px,-9.5px) rotate(6deg)}32%{transform:translate(-1px,.5px) rotate(-1deg)}38%,86%{transform:none}96%,100%{transform:translate(19px,-9.5px) rotate(6deg)}}
+@keyframes capGrains{0%,22%{opacity:0;transform:translate(0,-6px) scale(.15)}30%{opacity:1}40%{transform:translate(0,2px) scale(1.04)}46%,86%{opacity:1;transform:none}93%,100%{opacity:0;transform:scale(.9)}}
+.cap-green{animation:capGreen 6s cubic-bezier(.22,.8,.3,1) infinite both;transform-origin:29.1px 40.3px}
+.cap-clear{animation:capClear 6s cubic-bezier(.22,.8,.3,1) infinite both;transform-origin:52.3px 20.3px}
+.cap-grains{animation:capGrains 6s cubic-bezier(.3,.7,.4,1) infinite both;transform-origin:29.1px -42.6px}
+@media (prefers-reduced-motion: reduce){.cap-green,.cap-clear,.cap-grains{animation:none}}
+</style>
+</head>
+<body>
+<div id="stage">
+<section class="slide" data-n="1" aria-label="Slide 1"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 979.2px; top: -144.0px; width: 480.0px; height: 480.0px; box-sizing: border-box; background: rgba(211,239,224,0.65); border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<div style="position: absolute; left: -172.8px; top: 566.4px; width: 441.6px; height: 441.6px; box-sizing: border-box; background: rgba(211,239,224,0.65); border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<div style="position: absolute; left: 76.8px; top: 139.2px; width: 288.0px; height: 48.0px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 24.0px"></div>
+<div style="position: absolute; left: 76.8px; top: 139.2px; width: 288.0px; height: 48.0px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 21.33px; font-weight: 700; letter-spacing: 2.67px; font-family: 'Carlito', 'Calibri', sans-serif; color: #0B5C3B">CHALLENGE 3</span></p></div></div>
+<div style="position: absolute; left: 76.8px; top: 235.2px; width: 960.0px; height: 134.4px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: left; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 85.33px; font-weight: 700; font-family: 'Caladea', 'Cambria', sans-serif; color: #0B5C3B">Sovereign Health</span></p></div></div>
+<div style="position: absolute; left: 76.8px; top: 417.6px; width: 960.0px; height: 124.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: left; padding-bottom: 8.0px; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 24.0px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #16A05A">Presented by</span></p><p style="margin: 0; text-align: left; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 29.33px; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Aditya Purwar  ·  Vamshidhar Reddy Enugala  ·  Saloni Gupta</span></p></div></div>
+</div>
+</div></section>
+<section class="slide" data-n="2" aria-label="Slide 2"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 57.6px; top: 38.4px; width: 1084.8px; height: 86.4px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: left; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 45.33px; font-weight: 700; font-family: 'Caladea', 'Cambria', sans-serif; color: #0B5C3B">It starts with one patient</span></p></div></div>
+<img src="./assets/aefa057cc45ce1204af4007671cd9488.png" alt="" style="position: absolute; left: 68.87px; top: 158.4px; width: 323.06px; height: 355.2px; display: block; ">
+<img class="st2" src="./assets/474034ac9cc97bb05b6bd088bbee4280.png" alt="" style="position: absolute; left: 546.45px; top: 271.85px; width: 187.75px; height: 140.95px; display: block; ">
+<img class="st3" src="./assets/c7068a5162819032b3765d3c13e2eaf0.png" alt="" style="position: absolute; left: 891.63px; top: 201.25px; width: 299.95px; height: 312.35px; display: block; ">
+<svg class="st2" width="110.4" height="24.0" viewBox="-12 -12 110.4 24.0" aria-hidden="true" style="position: absolute; left: 410.4px; top: 343.2px; overflow: visible; "><defs><marker id="m1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0 0 L86.4 0.0" fill="none" stroke="#16A05A" stroke-width="4.0" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m1)"></path></svg>
+<svg class="st3" width="110.4" height="24.0" viewBox="-12 -12 110.4 24.0" aria-hidden="true" style="position: absolute; left: 760.8px; top: 343.2px; overflow: visible; "><defs><marker id="m2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0 0 L86.4 0.0" fill="none" stroke="#16A05A" stroke-width="4.0" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m2)"></path></svg>
+<div style="position: absolute; left: 38.4px; top: 542.4px; width: 384.0px; height: 96.0px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 34.67px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Stomach Ache</span></p></div></div>
+<div class="st2" style="position: absolute; left: 448.32px; top: 542.4px; width: 384.0px; height: 96.0px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 34.67px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Took Medication</span></p><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 26.67px; font-family: 'Carlito', 'Calibri', sans-serif; color: #5E7A6C">(for relief)</span></p></div></div>
+<div class="st3" style="position: absolute; left: 849.6px; top: 542.4px; width: 384.0px; height: 96.0px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 34.67px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Unexpected Reaction:</span></p><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 34.67px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #16A05A">Acne Breakouts</span></p></div></div>
+<div class="pain-glow" style="left: 120px; top: 385px; width: 190px; height: 180px"></div>
+<div class="pain-glow" style="left: 272px; top: 166px; width: 104px; height: 104px; animation-delay: .25s"></div>
+<svg class="bolt" width="46" height="34" viewBox="0 0 46 34" fill="none" stroke="#E0403A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="left: 30px; top: 430px"><path d="M2 6l16 4-10 8 18 4-8 8"></path></svg>
+<svg class="bolt" width="40" height="30" viewBox="0 0 40 30" fill="none" stroke="#E0403A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="left: 36px; top: 500px; animation-delay: .5s"><path d="M2 24l12-6-6-8 14-2-4-8"></path></svg>
+<svg class="bolt" width="40" height="32" viewBox="0 0 40 32" fill="none" stroke="#E0403A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="left: 382px; top: 420px; animation-delay: .8s"><path d="M38 4l-14 5 8 7-16 4 6 9"></path></svg>
+<svg class="bolt" width="28" height="24" viewBox="0 0 28 24" fill="none" stroke="#E0403A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="left: 262px; top: 196px; animation-delay: .3s"><path d="M2 4l10 3-6 6 12 2-4 7"></path></svg>
+<div class="flush" style="left: 1012px; top: 335px"></div>
+<div class="flush" style="left: 1078px; top: 330px; animation-delay: .2s"></div>
+<div class="spot" style="left: 995.6px; top: 319.3px; animation-delay: 0s"></div>
+<div class="spot" style="left: 1063.6px; top: 347.3px; animation-delay: .3s"></div>
+<div class="spot" style="left: 1041.6px; top: 279.3px; animation-delay: .6s"></div>
+<div class="spot" style="left: 1017.6px; top: 347.3px; animation-delay: .9s"></div>
+<div class="spot" style="left: 1083.6px; top: 331.3px; animation-delay: 1.2s"></div>
+<div class="spot" style="left: 1057.6px; top: 281.3px; animation-delay: 1.5s"></div>
+<div class="spot" style="left: 991.6px; top: 335.3px; animation-delay: 1.8s"></div>
+<div style="position: absolute; left: 1171.2px; top: 672.0px; width: 52.8px; height: 28.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 4.8px 9.6px 4.8px 9.6px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: right"><span style="font-size: 24.0px; font-family: 'Carlito', 'Calibri', sans-serif">2</span></p></div></div>
+</div>
+</div></section>
+<section class="slide" data-n="3" aria-label="Slide 3"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 57.6px; top: 38.4px; width: 1084.8px; height: 86.4px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: left; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 45.33px; font-weight: 700; font-family: 'Caladea', 'Cambria', sans-serif; color: #0B5C3B">The Reporter's dilemma</span></p></div></div>
+<svg width="81.6" height="110.4" viewBox="-12 -12 81.6 110.4" aria-hidden="true" style="position: absolute; left: 468.0px; top: 208.8px; overflow: visible; "><path d="M0 0 L57.6 86.4" fill="none" stroke="#8FD6B0" stroke-width="3.33" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<svg width="81.6" height="110.4" viewBox="-12 -12 81.6 110.4" aria-hidden="true" style="position: absolute; left: 730.08px; top: 208.8px; overflow: visible; "><path d="M57.6 0 L0 86.4" fill="none" stroke="#8FD6B0" stroke-width="3.33" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<svg width="59.52" height="24.0" viewBox="-12 -12 59.52 24.0" aria-hidden="true" style="position: absolute; left: 420.0px; top: 367.2px; overflow: visible; "><path d="M0 0 L35.52 0.0" fill="none" stroke="#8FD6B0" stroke-width="3.33" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<svg width="58.56" height="24.0" viewBox="-12 -12 58.56 24.0" aria-hidden="true" style="position: absolute; left: 801.12px; top: 367.2px; overflow: visible; "><path d="M0 0 L34.56 0.0" fill="none" stroke="#8FD6B0" stroke-width="3.33" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<svg width="24.0" height="72.0" viewBox="-12 -12 24.0 72.0" aria-hidden="true" style="position: absolute; left: 627.84px; top: 439.2px; overflow: visible; "><path d="M0 0 L0.0 48.0" fill="none" stroke="#8FD6B0" stroke-width="3.33" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<div style="position: absolute; left: 467.52px; top: 307.2px; width: 345.6px; height: 144.0px; box-sizing: border-box; background: #0B5C3B; border: 1.33px solid #0B5C3B; border-radius: 19.2px; filter: drop-shadow(0.0px 2.67px 6.67px rgba(11,92,59,0.14))"></div>
+<div style="position: absolute; left: 467.52px; top: 307.2px; width: 345.6px; height: 144.0px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 40.0px; font-weight: 700; font-family: 'Caladea', 'Cambria', sans-serif; color: #FFFFFF">How Do I</span></p><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 40.0px; font-weight: 700; font-family: 'Caladea', 'Cambria', sans-serif; color: #8FD6B0">Report It?</span></p></div></div>
+<div style="position: absolute; left: 57.6px; top: 163.2px; width: 422.4px; height: 115.2px; box-sizing: border-box; background: #FFFFFF; border: 1.33px solid #D3EFE0; border-radius: 17.28px; filter: drop-shadow(0.0px 2.67px 6.67px rgba(11,92,59,0.14))"></div>
+<div style="position: absolute; left: 81.6px; top: 182.4px; width: 76.8px; height: 76.8px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<img src="./assets/10855cdf7784d29d8deeffc0dc08a07f.png" alt="" style="position: absolute; left: 100.8px; top: 201.6px; width: 38.4px; height: 38.4px; display: block; ">
+<div style="position: absolute; left: 172.8px; top: 163.2px; width: 288.0px; height: 115.2px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 24.0px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Who do I report it to?</span></p></div></div>
+<div style="position: absolute; left: 799.68px; top: 163.2px; width: 422.4px; height: 115.2px; box-sizing: border-box; background: #FFFFFF; border: 1.33px solid #D3EFE0; border-radius: 17.28px; filter: drop-shadow(0.0px 2.67px 6.67px rgba(11,92,59,0.14))"></div>
+<div style="position: absolute; left: 823.68px; top: 182.4px; width: 76.8px; height: 76.8px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<img src="./assets/dd900dbd9a56bfd631ea20a1d2e6e965.png" alt="" style="position: absolute; left: 842.88px; top: 201.6px; width: 38.4px; height: 38.4px; display: block; ">
+<div style="position: absolute; left: 914.88px; top: 163.2px; width: 288.0px; height: 115.2px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 24.0px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Who is the manufacturer?</span></p></div></div>
+<div style="position: absolute; left: 57.6px; top: 321.6px; width: 374.4px; height: 115.2px; box-sizing: border-box; background: #FFFFFF; border: 1.33px solid #D3EFE0; border-radius: 17.28px; filter: drop-shadow(0.0px 2.67px 6.67px rgba(11,92,59,0.14))"></div>
+<div style="position: absolute; left: 81.6px; top: 340.8px; width: 76.8px; height: 76.8px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<img src="./assets/d8859be4bb631896e78f16d0d45e25ff.png" alt="" style="position: absolute; left: 100.8px; top: 360.0px; width: 38.4px; height: 38.4px; display: block; ">
+<div style="position: absolute; left: 172.8px; top: 321.6px; width: 240.0px; height: 115.2px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 24.0px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Which pharmaceutical company is responsible?</span></p></div></div>
+<div style="position: absolute; left: 847.68px; top: 321.6px; width: 374.4px; height: 115.2px; box-sizing: border-box; background: #FFFFFF; border: 1.33px solid #D3EFE0; border-radius: 17.28px; filter: drop-shadow(0.0px 2.67px 6.67px rgba(11,92,59,0.14))"></div>
+<div style="position: absolute; left: 871.68px; top: 340.8px; width: 76.8px; height: 76.8px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<img src="./assets/4e978ec46eb596aa74462d57e8a30132.png" alt="" style="position: absolute; left: 890.88px; top: 360.0px; width: 38.4px; height: 38.4px; display: block; ">
+<div style="position: absolute; left: 962.88px; top: 321.6px; width: 240.0px; height: 115.2px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 24.0px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Where can I find their contact details?</span></p></div></div>
+<div style="position: absolute; left: 400.32px; top: 499.2px; width: 480.0px; height: 115.2px; box-sizing: border-box; background: #FFFFFF; border: 1.33px solid #D3EFE0; border-radius: 17.28px; filter: drop-shadow(0.0px 2.67px 6.67px rgba(11,92,59,0.14))"></div>
+<div style="position: absolute; left: 424.32px; top: 518.4px; width: 76.8px; height: 76.8px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<img src="./assets/a26f0cef7f44ffc777f5193d81a2807c.png" alt="" style="position: absolute; left: 443.52px; top: 537.6px; width: 38.4px; height: 38.4px; display: block; ">
+<div style="position: absolute; left: 515.52px; top: 499.2px; width: 345.6px; height: 115.2px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 24.0px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">How do I communicate this adverse reaction?</span></p></div></div>
+<div style="position: absolute; left: 1171.2px; top: 672.0px; width: 52.8px; height: 28.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 4.8px 9.6px 4.8px 9.6px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: right"><span style="font-size: 24.0px; font-family: 'Carlito', 'Calibri', sans-serif">3</span></p></div></div>
+</div>
+</div></section>
+<section class="slide" data-n="4" aria-label="Slide 4"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 307.2px; top: 316.8px; width: 572.14px; height: 33.6px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0"></div>
+<div style="position: absolute; left: 879.34px; top: 316.8px; width: 93.14px; height: 33.6px; box-sizing: border-box; background: #16A05A; border: 1.33px solid #16A05A"></div>
+<div style="position: absolute; left: 307.2px; top: 369.6px; width: 572.14px; height: 76.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 53.33px; font-weight: 700; font-family: 'Caladea', 'Cambria', sans-serif; color: #5E7A6C">86%</span></p></div></div>
+<div style="position: absolute; left: 849.11px; top: 369.6px; width: 153.6px; height: 76.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 53.33px; font-weight: 700; font-family: 'Caladea', 'Cambria', sans-serif; color: #16A05A">14%</span></p></div></div>
+<div style="position: absolute; left: 307.2px; top: 434px; width: 572.14px; height: 32px; box-sizing: border-box"><p style="margin: 0; text-align: center"><span style="font-size: 24.0px; font-family: 'Carlito', 'Calibri', sans-serif; color: #5E7A6C">do not report</span></p></div>
+<div style="position: absolute; left: 849.11px; top: 434px; width: 153.6px; height: 32px; box-sizing: border-box"><p style="margin: 0; text-align: center"><span style="font-size: 24.0px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #0B5C3B">report</span></p></div>
+<div style="position: absolute; left: 256.32px; top: 614.4px; width: 768.0px; height: 43.2px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 21.33px; font-style: italic; font-family: 'Carlito', 'Calibri', sans-serif; color: #5E7A6C">Source: García-Abeijon et al. 2023, Drug Safety</span></p></div></div>
+<div style="position: absolute; left: 1171.2px; top: 672.0px; width: 52.8px; height: 28.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 4.8px 9.6px 4.8px 9.6px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: right"><span style="font-size: 24.0px; font-family: 'Carlito', 'Calibri', sans-serif">4</span></p></div></div>
+</div>
+</div></section>
+<section class="slide" data-n="5" aria-label="Slide 5"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 307.2px; top: 316.8px; width: 572.14px; height: 33.6px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0"></div>
+<div style="position: absolute; left: 879.34px; top: 316.8px; width: 93.14px; height: 33.6px; box-sizing: border-box; background: #16A05A; border: 1.33px solid #16A05A"></div>
+<div style="position: absolute; left: 307.2px; top: 369.6px; width: 572.14px; height: 76.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 53.33px; font-weight: 700; font-family: 'Caladea', 'Cambria', sans-serif; color: #5E7A6C">86%</span></p></div></div>
+<div style="position: absolute; left: 849.11px; top: 369.6px; width: 153.6px; height: 76.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 53.33px; font-weight: 700; font-family: 'Caladea', 'Cambria', sans-serif; color: #16A05A">14%</span></p></div></div>
+<div style="position: absolute; left: 307.2px; top: 434px; width: 572.14px; height: 32px; box-sizing: border-box"><p style="margin: 0; text-align: center"><span style="font-size: 24.0px; font-family: 'Carlito', 'Calibri', sans-serif; color: #5E7A6C">do not report</span></p></div>
+<div style="position: absolute; left: 849.11px; top: 434px; width: 153.6px; height: 32px; box-sizing: border-box"><p style="margin: 0; text-align: center"><span style="font-size: 24.0px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #0B5C3B">report</span></p></div>
+<div style="position: absolute; left: 695.51px; top: 478px; width: 460.8px; height: 57.6px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 32.0px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #0B5C3B">100 to 100,000 Report</span></p></div></div>
+<div style="position: absolute; left: 256.32px; top: 614.4px; width: 768.0px; height: 43.2px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 21.33px; font-style: italic; font-family: 'Carlito', 'Calibri', sans-serif; color: #5E7A6C">Source: García-Abeijon et al. 2023, Drug Safety</span></p></div></div>
+<div style="position: absolute; left: 1171.2px; top: 672.0px; width: 52.8px; height: 28.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 4.8px 9.6px 4.8px 9.6px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: right"><span style="font-size: 24.0px; font-family: 'Carlito', 'Calibri', sans-serif">5</span></p></div></div>
+</div>
+</div></section>
+<section class="slide" data-n="6" aria-label="Slide 6"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 57.6px; top: 38.4px; width: 1084.8px; height: 86.4px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: left; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 45.33px; font-weight: 700; font-family: 'Caladea', 'Cambria', sans-serif; color: #0B5C3B">Current pharmacovigilance process</span></p></div></div>
+<div style="position: absolute; left: 48.0px; top: 139.2px; width: 201.6px; height: 28.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 16.0px; font-weight: 700; letter-spacing: 1.33px; font-family: 'Carlito', 'Calibri', sans-serif; color: #5E7A6C">SOURCES</span></p></div></div>
+<div style="position: absolute; left: 1017.6px; top: 139.2px; width: 216.0px; height: 28.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 16.0px; font-weight: 700; letter-spacing: 1.33px; font-family: 'Carlito', 'Calibri', sans-serif; color: #5E7A6C">REGULATORY OUTPUTS</span></p></div></div>
+<div style="position: absolute; left: 48.0px; top: 177.6px; width: 201.6px; height: 55.68px; box-sizing: border-box; background: #EAF6EF; border: 1.33px solid #EAF6EF; border-radius: 11.52px"></div>
+<img src="./assets/7da96d42328b1980f8592f7f779be9c3.png" alt="" style="position: absolute; left: 61.44px; top: 189.12px; width: 32.64px; height: 32.64px; display: block; ">
+<div style="position: absolute; left: 105.6px; top: 177.6px; width: 139.2px; height: 55.68px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 17.33px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Web Forms</span></p></div></div>
+<svg width="105.6" height="219.36" viewBox="-12 -12 105.6 219.36" aria-hidden="true" style="position: absolute; left: 242.4px; top: 193.44px; overflow: visible; "><defs><marker id="m9" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0.0 0.0 C44.88 0.0 36.72 195.36 81.6 195.36" fill="none" stroke="#16A05A" stroke-width="2.33" stroke-dasharray="2.33 2.33" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m9)"></path></svg>
+<div style="position: absolute; left: 48.0px; top: 242.88px; width: 201.6px; height: 55.68px; box-sizing: border-box; background: #EAF6EF; border: 1.33px solid #EAF6EF; border-radius: 11.52px"></div>
+<img src="./assets/e27b96f18d36969b70b8a963f664093f.png" alt="" style="position: absolute; left: 61.44px; top: 254.4px; width: 32.64px; height: 32.64px; display: block; ">
+<div style="position: absolute; left: 105.6px; top: 242.88px; width: 139.2px; height: 55.68px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 17.33px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Phone / Helpline</span></p></div></div>
+<svg width="105.6" height="154.08" viewBox="-12 -12 105.6 154.08" aria-hidden="true" style="position: absolute; left: 242.4px; top: 258.72px; overflow: visible; "><defs><marker id="m10" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0.0 0.0 C44.88 0.0 36.72 130.08 81.6 130.08" fill="none" stroke="#16A05A" stroke-width="2.33" stroke-dasharray="2.33 2.33" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m10)"></path></svg>
+<div style="position: absolute; left: 48.0px; top: 308.16px; width: 201.6px; height: 55.68px; box-sizing: border-box; background: #EAF6EF; border: 1.33px solid #EAF6EF; border-radius: 11.52px"></div>
+<img src="./assets/06e0303db5e6c08aab0180f4b53352ab.png" alt="" style="position: absolute; left: 61.44px; top: 319.68px; width: 32.64px; height: 32.64px; display: block; ">
+<div style="position: absolute; left: 105.6px; top: 308.16px; width: 139.2px; height: 55.68px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 17.33px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Emails</span></p></div></div>
+<svg width="105.6" height="88.8" viewBox="-12 -12 105.6 88.8" aria-hidden="true" style="position: absolute; left: 242.4px; top: 324.0px; overflow: visible; "><defs><marker id="m11" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0.0 0.0 C44.88 0.0 36.72 64.8 81.6 64.8" fill="none" stroke="#16A05A" stroke-width="2.33" stroke-dasharray="2.33 2.33" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m11)"></path></svg>
+<div style="position: absolute; left: 48.0px; top: 373.44px; width: 201.6px; height: 55.68px; box-sizing: border-box; background: #EAF6EF; border: 1.33px solid #EAF6EF; border-radius: 11.52px"></div>
+<img src="./assets/b89ba80e983214b3e57f4aa5904f572c.png" alt="" style="position: absolute; left: 61.44px; top: 384.96px; width: 32.64px; height: 32.64px; display: block; ">
+<div style="position: absolute; left: 105.6px; top: 373.44px; width: 139.2px; height: 55.68px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 17.33px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Research Papers (PubMed)</span></p></div></div>
+<svg width="105.6" height="25.92" viewBox="-12 -12 105.6 25.92" aria-hidden="true" style="position: absolute; left: 242.4px; top: 388.8px; overflow: visible; "><defs><marker id="m12" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0.0 0.96 C44.88 0.96 36.72 0.96 81.6 0.96" fill="none" stroke="#16A05A" stroke-width="2.33" stroke-dasharray="2.33 2.33" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m12)"></path></svg>
+<div style="position: absolute; left: 48.0px; top: 438.72px; width: 201.6px; height: 55.68px; box-sizing: border-box; background: #EAF6EF; border: 1.33px solid #EAF6EF; border-radius: 11.52px"></div>
+<img src="./assets/314aaee8a5a95f74341c3c1dac26aa2b.png" alt="" style="position: absolute; left: 61.44px; top: 450.24px; width: 32.64px; height: 32.64px; display: block; ">
+<div style="position: absolute; left: 105.6px; top: 438.72px; width: 139.2px; height: 55.68px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 17.33px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Instagram</span></p></div></div>
+<svg width="105.6" height="89.76" viewBox="-12 -12 105.6 89.76" aria-hidden="true" style="position: absolute; left: 242.4px; top: 388.8px; overflow: visible; "><defs><marker id="m13" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0.0 65.76 C44.88 65.76 36.72 0.0 81.6 0.0" fill="none" stroke="#16A05A" stroke-width="2.33" stroke-dasharray="2.33 2.33" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m13)"></path></svg>
+<div style="position: absolute; left: 48.0px; top: 504.0px; width: 201.6px; height: 55.68px; box-sizing: border-box; background: #EAF6EF; border: 1.33px solid #EAF6EF; border-radius: 11.52px"></div>
+<img src="./assets/133bbf0823d555731de0bd954be8886e.png" alt="" style="position: absolute; left: 61.44px; top: 515.52px; width: 32.64px; height: 32.64px; display: block; ">
+<div style="position: absolute; left: 105.6px; top: 504.0px; width: 139.2px; height: 55.68px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 17.33px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Facebook</span></p></div></div>
+<svg width="105.6" height="155.04" viewBox="-12 -12 105.6 155.04" aria-hidden="true" style="position: absolute; left: 242.4px; top: 388.8px; overflow: visible; "><defs><marker id="m14" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0.0 131.04 C44.88 131.04 36.72 0.0 81.6 0.0" fill="none" stroke="#16A05A" stroke-width="2.33" stroke-dasharray="2.33 2.33" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m14)"></path></svg>
+<div style="position: absolute; left: 48.0px; top: 569.28px; width: 201.6px; height: 55.68px; box-sizing: border-box; background: #EAF6EF; border: 1.33px solid #EAF6EF; border-radius: 11.52px"></div>
+<img src="./assets/30459bcdd50bd040a34ff6d58b08a903.png" alt="" style="position: absolute; left: 61.44px; top: 580.8px; width: 32.64px; height: 32.64px; display: block; ">
+<div style="position: absolute; left: 105.6px; top: 569.28px; width: 139.2px; height: 55.68px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 17.33px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Twitter / X</span></p></div></div>
+<svg width="105.6" height="220.32" viewBox="-12 -12 105.6 220.32" aria-hidden="true" style="position: absolute; left: 242.4px; top: 388.8px; overflow: visible; "><defs><marker id="m15" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0.0 196.32 C44.88 196.32 36.72 0.0 81.6 0.0" fill="none" stroke="#16A05A" stroke-width="2.33" stroke-dasharray="2.33 2.33" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m15)"></path></svg>
+<div style="position: absolute; left: 340.8px; top: 177.6px; width: 177.6px; height: 446.4px; box-sizing: border-box; background: #FFFFFF; border: 2.0px solid #8FD6B0; border-radius: 17.28px; filter: drop-shadow(0.0px 2.67px 6.67px rgba(11,92,59,0.14))"></div>
+<div style="position: absolute; left: 388.8px; top: 204.0px; width: 81.6px; height: 81.6px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<img src="./assets/fd781f9c6252b9772d586a97181a7374.png" alt="" style="position: absolute; left: 409.2px; top: 224.4px; width: 40.8px; height: 40.8px; display: block; ">
+<div style="position: absolute; left: 350.4px; top: 302.4px; width: 158.4px; height: 105.6px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 21.33px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #0B5C3B">Report Relevance Assessment</span></p></div></div>
+<div style="position: absolute; left: 542.4px; top: 177.6px; width: 177.6px; height: 446.4px; box-sizing: border-box; background: #FFFFFF; border: 2.0px solid #8FD6B0; border-radius: 17.28px; filter: drop-shadow(0.0px 2.67px 6.67px rgba(11,92,59,0.14))"></div>
+<div style="position: absolute; left: 590.4px; top: 204.0px; width: 81.6px; height: 81.6px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<img src="./assets/b5334a9bf2534aa6af8f843a876ed284.png" alt="" style="position: absolute; left: 610.8px; top: 224.4px; width: 40.8px; height: 40.8px; display: block; ">
+<div style="position: absolute; left: 552.0px; top: 302.4px; width: 158.4px; height: 105.6px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 21.33px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #0B5C3B">Structured Classification</span></p><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 16.0px; font-family: 'Carlito', 'Calibri', sans-serif; color: #5E7A6C">(MedDRA Coding)</span></p></div></div>
+<div style="position: absolute; left: 744.0px; top: 177.6px; width: 177.6px; height: 446.4px; box-sizing: border-box; background: #FFFFFF; border: 2.0px solid #8FD6B0; border-radius: 17.28px; filter: drop-shadow(0.0px 2.67px 6.67px rgba(11,92,59,0.14))"></div>
+<div style="position: absolute; left: 792.0px; top: 204.0px; width: 81.6px; height: 81.6px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<img src="./assets/e2dbecc4d26a63195611fd7ce5e4746b.png" alt="" style="position: absolute; left: 812.4px; top: 224.4px; width: 40.8px; height: 40.8px; display: block; ">
+<div style="position: absolute; left: 753.6px; top: 302.4px; width: 158.4px; height: 105.6px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 21.33px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #0B5C3B">Signal Detection &amp; Analysis</span></p></div></div>
+<div style="position: absolute; left: 355.2px; top: 417.6px; width: 148.8px; height: 192.0px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 17.33px; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Validate, de-duplicate and identify relevant PV reports (ICSR triage)</span></p></div></div>
+<div style="position: absolute; left: 552.0px; top: 412.8px; width: 158.4px; height: 91.2px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 9.6px"></div>
+<div style="position: absolute; left: 557.76px; top: 412.8px; width: 146.88px; height: 91.2px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 14.67px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #0B5C3B">Medicine Classification (MedDRA)</span></p></div></div>
+<div style="position: absolute; left: 552.0px; top: 508.8px; width: 158.4px; height: 91.2px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 9.6px"></div>
+<div style="position: absolute; left: 557.76px; top: 508.8px; width: 146.88px; height: 91.2px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 14.67px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #0B5C3B">Disease / Adverse Event Classification (MedDRA)</span></p></div></div>
+<div style="position: absolute; left: 758.4px; top: 417.6px; width: 148.8px; height: 192.0px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: center; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 17.33px; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">Detect safety signals, assess trends and evaluate benefit–risk</span></p></div></div>
+<svg width="42.239999999999995" height="24.0" viewBox="-12 -12 42.239999999999995 24.0" aria-hidden="true" style="position: absolute; left: 509.28px; top: 388.8px; overflow: visible; "><defs><marker id="m16" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0 0 L18.24 0.0" fill="none" stroke="#16A05A" stroke-width="2.67" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m16)"></path></svg>
+<svg width="42.239999999999995" height="24.0" viewBox="-12 -12 42.239999999999995 24.0" aria-hidden="true" style="position: absolute; left: 710.88px; top: 388.8px; overflow: visible; "><defs><marker id="m17" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0 0 L18.24 0.0" fill="none" stroke="#16A05A" stroke-width="2.67" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m17)"></path></svg>
+<svg width="110.4" height="208.8" viewBox="-12 -12 110.4 208.8" aria-hidden="true" style="position: absolute; left: 914.4px; top: 204.0px; overflow: visible; "><defs><marker id="m18" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0.0 184.8 C47.52 184.8 38.88 0.0 86.4 0.0" fill="none" stroke="#16A05A" stroke-width="2.33" stroke-dasharray="2.33 2.33" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m18)"></path></svg>
+<div style="position: absolute; left: 1017.6px; top: 177.6px; width: 216.0px; height: 76.8px; box-sizing: border-box; background: #FFFFFF; border: 1.33px solid #D3EFE0; border-radius: 11.52px; filter: drop-shadow(0.0px 2.67px 6.67px rgba(11,92,59,0.14))"></div>
+<div style="position: absolute; left: 1030.08px; top: 192.0px; width: 48.0px; height: 48.0px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<img src="./assets/eef0265cf2d01bddc1a3ee7ebbf085a1.png" alt="" style="position: absolute; left: 1042.08px; top: 204.0px; width: 24.0px; height: 24.0px; display: block; ">
+<div style="position: absolute; left: 1086.72px; top: 177.6px; width: 139.2px; height: 76.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 18.67px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #0B5C3B">PSUR</span></p><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 14.0px; font-family: 'Carlito', 'Calibri', sans-serif; color: #5E7A6C">Periodic Safety Update Report</span></p></div></div>
+<svg width="110.4" height="116.64" viewBox="-12 -12 110.4 116.64" aria-hidden="true" style="position: absolute; left: 914.4px; top: 296.16px; overflow: visible; "><defs><marker id="m19" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0.0 92.64 C47.52 92.64 38.88 0.0 86.4 0.0" fill="none" stroke="#16A05A" stroke-width="2.33" stroke-dasharray="2.33 2.33" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m19)"></path></svg>
+<div style="position: absolute; left: 1017.6px; top: 269.76px; width: 216.0px; height: 76.8px; box-sizing: border-box; background: #FFFFFF; border: 1.33px solid #D3EFE0; border-radius: 11.52px; filter: drop-shadow(0.0px 2.67px 6.67px rgba(11,92,59,0.14))"></div>
+<div style="position: absolute; left: 1030.08px; top: 284.16px; width: 48.0px; height: 48.0px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<img src="./assets/512d227d11db20d5891ad00263e11f48.png" alt="" style="position: absolute; left: 1042.08px; top: 296.16px; width: 24.0px; height: 24.0px; display: block; ">
+<div style="position: absolute; left: 1086.72px; top: 269.76px; width: 139.2px; height: 76.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 18.67px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #0B5C3B">PADER</span></p><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 14.0px; font-family: 'Carlito', 'Calibri', sans-serif; color: #5E7A6C">Periodic Adverse Drug Experience Report</span></p></div></div>
+<svg width="110.4" height="25.92" viewBox="-12 -12 110.4 25.92" aria-hidden="true" style="position: absolute; left: 914.4px; top: 388.32px; overflow: visible; "><defs><marker id="m20" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0.0 0.96 C47.52 0.96 38.88 0.96 86.4 0.96" fill="none" stroke="#16A05A" stroke-width="2.33" stroke-dasharray="2.33 2.33" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m20)"></path></svg>
+<div style="position: absolute; left: 1017.6px; top: 361.92px; width: 216.0px; height: 76.8px; box-sizing: border-box; background: #FFFFFF; border: 1.33px solid #D3EFE0; border-radius: 11.52px; filter: drop-shadow(0.0px 2.67px 6.67px rgba(11,92,59,0.14))"></div>
+<div style="position: absolute; left: 1030.08px; top: 376.32px; width: 48.0px; height: 48.0px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<img src="./assets/f4bbd2dbdb00198c7c81c867c212b56d.png" alt="" style="position: absolute; left: 1042.08px; top: 388.32px; width: 24.0px; height: 24.0px; display: block; ">
+<div style="position: absolute; left: 1086.72px; top: 361.92px; width: 139.2px; height: 76.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 18.67px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #0B5C3B">DSUR</span></p><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 14.0px; font-family: 'Carlito', 'Calibri', sans-serif; color: #5E7A6C">Development Safety Update Report</span></p></div></div>
+<svg width="110.4" height="115.68" viewBox="-12 -12 110.4 115.68" aria-hidden="true" style="position: absolute; left: 914.4px; top: 388.8px; overflow: visible; "><defs><marker id="m21" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0.0 0.0 C47.52 0.0 38.88 91.68 86.4 91.68" fill="none" stroke="#16A05A" stroke-width="2.33" stroke-dasharray="2.33 2.33" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m21)"></path></svg>
+<div style="position: absolute; left: 1017.6px; top: 454.08px; width: 216.0px; height: 76.8px; box-sizing: border-box; background: #FFFFFF; border: 1.33px solid #D3EFE0; border-radius: 11.52px; filter: drop-shadow(0.0px 2.67px 6.67px rgba(11,92,59,0.14))"></div>
+<div style="position: absolute; left: 1030.08px; top: 468.48px; width: 48.0px; height: 48.0px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<img src="./assets/da1879c05c3e8e416a74375ae245aa24.png" alt="" style="position: absolute; left: 1042.08px; top: 480.48px; width: 24.0px; height: 24.0px; display: block; ">
+<div style="position: absolute; left: 1086.72px; top: 454.08px; width: 139.2px; height: 76.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 18.67px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #0B5C3B">RMP</span></p><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 14.0px; font-family: 'Carlito', 'Calibri', sans-serif; color: #5E7A6C">Risk Management Plan</span></p></div></div>
+<svg width="110.4" height="207.84" viewBox="-12 -12 110.4 207.84" aria-hidden="true" style="position: absolute; left: 914.4px; top: 388.8px; overflow: visible; "><defs><marker id="m22" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#16A05A"></path></marker></defs><path d="M0.0 0.0 C47.52 0.0 38.88 183.84 86.4 183.84" fill="none" stroke="#16A05A" stroke-width="2.33" stroke-dasharray="2.33 2.33" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#m22)"></path></svg>
+<div style="position: absolute; left: 1017.6px; top: 546.24px; width: 216.0px; height: 76.8px; box-sizing: border-box; background: #FFFFFF; border: 1.33px solid #D3EFE0; border-radius: 11.52px; filter: drop-shadow(0.0px 2.67px 6.67px rgba(11,92,59,0.14))"></div>
+<div style="position: absolute; left: 1030.08px; top: 560.64px; width: 48.0px; height: 48.0px; box-sizing: border-box; background: #D3EFE0; border: 1.33px solid #D3EFE0; border-radius: 50%"></div>
+<img src="./assets/ba720a7f45bbdbf2f498bede6d0461b7.png" alt="" style="position: absolute; left: 1042.08px; top: 572.64px; width: 24.0px; height: 24.0px; display: block; ">
+<div style="position: absolute; left: 1086.72px; top: 546.24px; width: 139.2px; height: 76.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 18.67px; font-weight: 700; font-family: 'Carlito', 'Calibri', sans-serif; color: #0B5C3B">Other</span></p><p style="margin: 0; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 14.0px; font-family: 'Carlito', 'Calibri', sans-serif; color: #5E7A6C">Regulatory Reports</span></p></div></div>
+<div style="position: absolute; left: 1171.2px; top: 672.0px; width: 52.8px; height: 28.8px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 4.8px 9.6px 4.8px 9.6px; display: flex; flex-direction: column; justify-content: flex-start; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: right"><span style="font-size: 24.0px; font-family: 'Carlito', 'Calibri', sans-serif">6</span></p></div></div>
+</div>
+</div></section>
+<section class="slide" data-n="7" aria-label="Slide 7"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; box-sizing: border-box; padding: 54px 58px 60px; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C; display: flex; flex-direction: column; gap: 28px">
+<h1 style="margin: 0; font-size: 45.33px; font-weight: 700; line-height: 1.2; font-family: 'Caladea', 'Cambria', sans-serif; color: #0B5C3B">Why it matters</h1>
+<div style="flex-grow: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px">
+
+<div style="background: #FFFFFF; border: 1.33px solid #D3EFE0; border-radius: 22px; padding: 28px 36px 32px; filter: drop-shadow(0px 2.67px 6.67px rgba(11,92,59,0.14)); display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 16px">
+<img src="./assets/0f196ab744a0b358424beba668d0c11d.png" alt="Illustration: a compliance checklist with a medical shield" style="width: 296px; height: 321px; object-fit: contain; display: block">
+<p style="margin: 0; text-align: center; font-family: 'Caladea', 'Cambria', sans-serif; font-size: 30px; font-weight: 700; line-height: 1.25; color: #10261C">Reports submitted to <span style="color: #16A05A">regulatory bodies</span></p>
+</div>
+
+<div style="background: #FFFFFF; border: 1.33px solid #D3EFE0; border-radius: 22px; padding: 28px 36px 32px; filter: drop-shadow(0px 2.67px 6.67px rgba(11,92,59,0.14)); display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 16px">
+<img src="./assets/177be772cdd769d5d665058ccde4133e.png" alt="Illustration: a microscope" style="width: 351px; height: 317px; object-fit: contain; display: block; -webkit-mask-image: linear-gradient(to right, #000 82%, transparent 100%); mask-image: linear-gradient(to right, #000 82%, transparent 100%)">
+<p style="margin: 0; text-align: center; font-family: 'Caladea', 'Cambria', sans-serif; font-size: 30px; font-weight: 700; line-height: 1.25; color: #10261C">Documentation improves <span style="color: #16A05A">medicine research</span></p>
+</div>
+
+</div>
+<div style="position: absolute; left: 1171.2px; top: 672.0px; width: 52.8px; height: 28.8px; box-sizing: border-box; padding: 4.8px 9.6px"><p style="margin: 0; text-align: right; line-height: 1.2"><span style="font-size: 24.0px; font-family: 'Carlito', 'Calibri', sans-serif">7</span></p></div>
+</div>
+</div></section>
+<section class="slide" data-n="8" aria-label="Slide 8"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 57.6px; top: 38.4px; width: 1084.8px; height: 86.4px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"></div></div>
+<div style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 720px; box-sizing: border-box; overflow: hidden; background: #FFFFFF; filter: drop-shadow(0px 2.67px 6.67px rgba(11,92,59,0.14))">
+<video muted playsinline preload="auto" src="./assets/c9de48b8077f6d596bd5f59628b07d07.mp4" aria-label="Medicine capture screen recording" style="width: 100%; height: 100%; object-fit: contain; display: block" width="1280" height="720"></video>
+</div>
+<img src="./assets/47d6ae4ffe5f890c7769a7bf21c74acf.svg" alt="ElevenLabs" style="position: absolute; left: 1066px; top: 60px; width: 154px; height: 20px; display: block">
+</div>
+</div></section>
+<section class="slide" data-n="9" aria-label="Slide 9"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 57.6px; top: 38.4px; width: 1084.8px; height: 86.4px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"></div></div>
+<div aria-hidden="true" style="position: absolute; left: 161px; top: 666px; width: 958px; height: 26px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(16,38,28,0.22) 0%, rgba(16,38,28,0) 70%)"></div>
+<div style="position: absolute; left: 200px; top: 142px; width: 880px; height: 520px; box-sizing: border-box; padding: 16px 14px 22px; background: linear-gradient(#2A2B2E, #17181A); border-radius: 20px 20px 6px 6px; box-shadow: inset 0 0 0 1.5px #3A3B3F">
+<div aria-hidden="true" style="position: absolute; left: 50%; top: 6px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #3F4247"></div>
+<video muted playsinline preload="auto" src="./assets/720e3c3798c5ad3f9f5bad405e907a73.mp4" aria-label="Dashboard screen recording" style="width: 852px; height: 482px; object-fit: cover; display: block; border-radius: 3px; background: #F4F6F5"></video>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 121px; top: 662px; width: 1038px; height: 16px; background: linear-gradient(#EEEFF1 0%, #CFD1D5 45%, #A9ACB1 100%); border-radius: 2px 2px 14px 14px / 2px 2px 10px 10px">
+<div style="position: absolute; left: 50%; top: 0; width: 135px; height: 6px; margin-left: -67px; background: linear-gradient(#B8BBC0, #D7D9DC); border-radius: 0 0 8px 8px"></div>
+</div>
+<img src="./assets/47d6ae4ffe5f890c7769a7bf21c74acf.svg" alt="ElevenLabs" style="position: absolute; left: 1066px; top: 60px; width: 154px; height: 20px; display: block">
+</div>
+</div></section>
+<section class="slide" data-n="10" aria-label="Slide 10"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 57.6px; top: 38.4px; width: 1084.8px; height: 86.4px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"></div></div>
+<div aria-hidden="true" style="position: absolute; left: 161px; top: 666px; transform: translateX(-165px) scale(.82); transform-origin: 479px -264px; width: 958px; height: 26px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(16,38,28,0.22) 0%, rgba(16,38,28,0) 70%)"></div>
+<div style="position: absolute; left: 200px; top: 142px; transform: translateX(-165px) scale(.82); transform-origin: 440px 260px; width: 880px; height: 520px; box-sizing: border-box; padding: 16px 14px 22px; background: linear-gradient(#2A2B2E, #17181A); border-radius: 20px 20px 6px 6px; box-shadow: inset 0 0 0 1.5px #3A3B3F">
+<div aria-hidden="true" style="position: absolute; left: 50%; top: 6px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #3F4247"></div>
+<video muted playsinline preload="auto" src="./assets/24d80e83cadf72c7d3252ab8ffd5c2a7.mp4" aria-label="Triage screen recording" style="width: 852px; height: 482px; object-fit: cover; display: block; border-radius: 3px; background: #F4F6F5"></video>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 121px; top: 662px; transform: translateX(-165px) scale(.82); transform-origin: 519px -260px; width: 1038px; height: 16px; background: linear-gradient(#EEEFF1 0%, #CFD1D5 45%, #A9ACB1 100%); border-radius: 2px 2px 14px 14px / 2px 2px 10px 10px">
+<div style="position: absolute; left: 50%; top: 0; width: 135px; height: 6px; margin-left: -67px; background: linear-gradient(#B8BBC0, #D7D9DC); border-radius: 0 0 8px 8px"></div>
+</div>
+<div style="position: absolute; left: 928px; top: 170px; width: 300px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px"><span style="font-family: 'Caladea', 'Cambria', sans-serif; font-size: 28px; font-weight: 700; color: #0B5C3B">Tools used</span><div style="display: flex; flex-direction: column; gap: 8px"><img src="./assets/0967913b091116e01271847c15dc1cb3.png" alt="Exasol" style="width: 172px; height: 42px; display: block"><span style="font-size: 21px; color: #5E7A6C">Server · MCP · Agents</span></div><img src="./assets/7de09f04df11c183b47ef23bf31d581a.png" alt="AWS" style="width: 112px; height: 67px; display: block"></div>
+<img src="./assets/47d6ae4ffe5f890c7769a7bf21c74acf.svg" alt="ElevenLabs" style="position: absolute; left: 1066px; top: 60px; width: 154px; height: 20px; display: block">
+</div>
+</div></section>
+<section class="slide" data-n="11" aria-label="Slide 11"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 57.6px; top: 38.4px; width: 1084.8px; height: 86.4px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"></div></div>
+<div aria-hidden="true" style="position: absolute; left: 161px; top: 666px; transform: translateX(-165px) scale(.82); transform-origin: 479px -264px; width: 958px; height: 26px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(16,38,28,0.22) 0%, rgba(16,38,28,0) 70%)"></div>
+<div style="position: absolute; left: 200px; top: 142px; transform: translateX(-165px) scale(.82); transform-origin: 440px 260px; width: 880px; height: 520px; box-sizing: border-box; padding: 16px 14px 22px; background: linear-gradient(#2A2B2E, #17181A); border-radius: 20px 20px 6px 6px; box-shadow: inset 0 0 0 1.5px #3A3B3F">
+<div aria-hidden="true" style="position: absolute; left: 50%; top: 6px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #3F4247"></div>
+<video muted playsinline preload="auto" src="./assets/a6bfa59f631ad3a7c766367975343cde.mp4" aria-label="Case Workbench screen recording" style="width: 852px; height: 482px; object-fit: cover; display: block; border-radius: 3px; background: #F4F6F5"></video>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 121px; top: 662px; transform: translateX(-165px) scale(.82); transform-origin: 519px -260px; width: 1038px; height: 16px; background: linear-gradient(#EEEFF1 0%, #CFD1D5 45%, #A9ACB1 100%); border-radius: 2px 2px 14px 14px / 2px 2px 10px 10px">
+<div style="position: absolute; left: 50%; top: 0; width: 135px; height: 6px; margin-left: -67px; background: linear-gradient(#B8BBC0, #D7D9DC); border-radius: 0 0 8px 8px"></div>
+</div>
+<div style="position: absolute; left: 928px; top: 170px; width: 300px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px"><span style="font-family: 'Caladea', 'Cambria', sans-serif; font-size: 28px; font-weight: 700; color: #0B5C3B">Tools used</span><div style="display: flex; flex-direction: column; gap: 8px"><img src="./assets/0967913b091116e01271847c15dc1cb3.png" alt="Exasol" style="width: 172px; height: 42px; display: block"><span style="font-size: 21px; color: #5E7A6C">Server · MCP · Agents</span></div><img src="./assets/7de09f04df11c183b47ef23bf31d581a.png" alt="AWS" style="width: 112px; height: 67px; display: block"></div>
+<img src="./assets/47d6ae4ffe5f890c7769a7bf21c74acf.svg" alt="ElevenLabs" style="position: absolute; left: 1066px; top: 60px; width: 154px; height: 20px; display: block">
+</div>
+</div></section>
+<section class="slide" data-n="12" aria-label="Slide 12"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 57.6px; top: 38.4px; width: 1084.8px; height: 86.4px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"></div></div>
+<div aria-hidden="true" style="position: absolute; left: 161px; top: 666px; transform: translateX(-165px) scale(.82); transform-origin: 479px -264px; width: 958px; height: 26px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(16,38,28,0.22) 0%, rgba(16,38,28,0) 70%)"></div>
+<div style="position: absolute; left: 200px; top: 142px; transform: translateX(-165px) scale(.82); transform-origin: 440px 260px; width: 880px; height: 520px; box-sizing: border-box; padding: 16px 14px 22px; background: linear-gradient(#2A2B2E, #17181A); border-radius: 20px 20px 6px 6px; box-shadow: inset 0 0 0 1.5px #3A3B3F">
+<div aria-hidden="true" style="position: absolute; left: 50%; top: 6px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #3F4247"></div>
+<video muted playsinline preload="auto" src="./assets/1326295acddf1802cd1b93495e3690d7.mp4" aria-label="MedDRA Workbench screen recording" style="width: 852px; height: 482px; object-fit: cover; display: block; border-radius: 3px; background: #F4F6F5"></video>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 121px; top: 662px; transform: translateX(-165px) scale(.82); transform-origin: 519px -260px; width: 1038px; height: 16px; background: linear-gradient(#EEEFF1 0%, #CFD1D5 45%, #A9ACB1 100%); border-radius: 2px 2px 14px 14px / 2px 2px 10px 10px">
+<div style="position: absolute; left: 50%; top: 0; width: 135px; height: 6px; margin-left: -67px; background: linear-gradient(#B8BBC0, #D7D9DC); border-radius: 0 0 8px 8px"></div>
+</div>
+<div style="position: absolute; left: 928px; top: 170px; width: 300px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px"><span style="font-family: 'Caladea', 'Cambria', sans-serif; font-size: 28px; font-weight: 700; color: #0B5C3B">Tools used</span><div style="display: flex; flex-direction: column; gap: 8px"><img src="./assets/0967913b091116e01271847c15dc1cb3.png" alt="Exasol" style="width: 172px; height: 42px; display: block"><span style="font-size: 21px; color: #5E7A6C">Server · MCP · Agents</span></div><img src="./assets/7de09f04df11c183b47ef23bf31d581a.png" alt="AWS" style="width: 112px; height: 67px; display: block"><span style="font-family: 'Caladea', 'Cambria', sans-serif; font-size: 25px; font-weight: 700; line-height: 1.2; color: #0B5C3B">Hybrid AI + ML Model</span></div>
+<img src="./assets/47d6ae4ffe5f890c7769a7bf21c74acf.svg" alt="ElevenLabs" style="position: absolute; left: 1066px; top: 60px; width: 154px; height: 20px; display: block">
+</div>
+</div></section>
+<section class="slide" data-n="13" aria-label="Slide 13"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 57.6px; top: 38.4px; width: 1084.8px; height: 86.4px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"></div></div>
+<div aria-hidden="true" style="position: absolute; left: 161px; top: 666px; transform: translateX(-165px) scale(.82); transform-origin: 479px -264px; width: 958px; height: 26px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(16,38,28,0.22) 0%, rgba(16,38,28,0) 70%)"></div>
+<div style="position: absolute; left: 200px; top: 142px; transform: translateX(-165px) scale(.82); transform-origin: 440px 260px; width: 880px; height: 520px; box-sizing: border-box; padding: 16px 14px 22px; background: linear-gradient(#2A2B2E, #17181A); border-radius: 20px 20px 6px 6px; box-shadow: inset 0 0 0 1.5px #3A3B3F">
+<div aria-hidden="true" style="position: absolute; left: 50%; top: 6px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #3F4247"></div>
+<video muted playsinline preload="auto" src="./assets/6f53b3303878b40d9f4420b007b9dffe.mp4" aria-label="Signal Detection screen recording" style="width: 852px; height: 482px; object-fit: cover; display: block; border-radius: 3px; background: #F4F6F5"></video>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 121px; top: 662px; transform: translateX(-165px) scale(.82); transform-origin: 519px -260px; width: 1038px; height: 16px; background: linear-gradient(#EEEFF1 0%, #CFD1D5 45%, #A9ACB1 100%); border-radius: 2px 2px 14px 14px / 2px 2px 10px 10px">
+<div style="position: absolute; left: 50%; top: 0; width: 135px; height: 6px; margin-left: -67px; background: linear-gradient(#B8BBC0, #D7D9DC); border-radius: 0 0 8px 8px"></div>
+</div>
+<div style="position: absolute; left: 928px; top: 170px; width: 300px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px"><span style="font-family: 'Caladea', 'Cambria', sans-serif; font-size: 28px; font-weight: 700; color: #0B5C3B">Tools used</span><div style="display: flex; flex-direction: column; gap: 8px"><img src="./assets/0967913b091116e01271847c15dc1cb3.png" alt="Exasol" style="width: 172px; height: 42px; display: block"><span style="font-size: 21px; color: #5E7A6C">Server · MCP · Agents</span></div><img src="./assets/7de09f04df11c183b47ef23bf31d581a.png" alt="AWS" style="width: 112px; height: 67px; display: block"></div>
+<img src="./assets/47d6ae4ffe5f890c7769a7bf21c74acf.svg" alt="ElevenLabs" style="position: absolute; left: 1066px; top: 60px; width: 154px; height: 20px; display: block">
+</div>
+</div></section>
+<section class="slide" data-n="14" aria-label="Slide 14"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 57.6px; top: 38.4px; width: 1084.8px; height: 86.4px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"></div></div>
+<div aria-hidden="true" style="position: absolute; left: 161px; top: 666px; transform: translateX(-165px) scale(.82); transform-origin: 479px -264px; width: 958px; height: 26px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(16,38,28,0.22) 0%, rgba(16,38,28,0) 70%)"></div>
+<div style="position: absolute; left: 200px; top: 142px; transform: translateX(-165px) scale(.82); transform-origin: 440px 260px; width: 880px; height: 520px; box-sizing: border-box; padding: 16px 14px 22px; background: linear-gradient(#2A2B2E, #17181A); border-radius: 20px 20px 6px 6px; box-shadow: inset 0 0 0 1.5px #3A3B3F">
+<div aria-hidden="true" style="position: absolute; left: 50%; top: 6px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #3F4247"></div>
+<video muted playsinline preload="auto" src="./assets/655bb1f9c6e28083ab0c1f4cca24c9f9.mp4" aria-label="Signal Detection · Extended screen recording" style="width: 852px; height: 482px; object-fit: cover; display: block; border-radius: 3px; background: #F4F6F5"></video>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 121px; top: 662px; transform: translateX(-165px) scale(.82); transform-origin: 519px -260px; width: 1038px; height: 16px; background: linear-gradient(#EEEFF1 0%, #CFD1D5 45%, #A9ACB1 100%); border-radius: 2px 2px 14px 14px / 2px 2px 10px 10px">
+<div style="position: absolute; left: 50%; top: 0; width: 135px; height: 6px; margin-left: -67px; background: linear-gradient(#B8BBC0, #D7D9DC); border-radius: 0 0 8px 8px"></div>
+</div>
+<div style="position: absolute; left: 928px; top: 170px; width: 300px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px"><span style="font-family: 'Caladea', 'Cambria', sans-serif; font-size: 28px; font-weight: 700; color: #0B5C3B">Tools used</span><div style="display: flex; flex-direction: column; gap: 8px"><img src="./assets/0967913b091116e01271847c15dc1cb3.png" alt="Exasol" style="width: 172px; height: 42px; display: block"><span style="font-size: 21px; color: #5E7A6C">Server · MCP · Agents</span></div><img src="./assets/7de09f04df11c183b47ef23bf31d581a.png" alt="AWS" style="width: 112px; height: 67px; display: block"></div>
+<img src="./assets/47d6ae4ffe5f890c7769a7bf21c74acf.svg" alt="ElevenLabs" style="position: absolute; left: 1066px; top: 60px; width: 154px; height: 20px; display: block">
+</div>
+</div></section>
+<section class="slide" data-n="15" aria-label="Slide 15"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 57.6px; top: 38.4px; width: 1084.8px; height: 86.4px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"></div></div>
+<div aria-hidden="true" style="position: absolute; left: 161px; top: 666px; transform: translateX(-165px) scale(.82); transform-origin: 479px -264px; width: 958px; height: 26px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(16,38,28,0.22) 0%, rgba(16,38,28,0) 70%)"></div>
+<div style="position: absolute; left: 200px; top: 142px; transform: translateX(-165px) scale(.82); transform-origin: 440px 260px; width: 880px; height: 520px; box-sizing: border-box; padding: 16px 14px 22px; background: linear-gradient(#2A2B2E, #17181A); border-radius: 20px 20px 6px 6px; box-shadow: inset 0 0 0 1.5px #3A3B3F">
+<div aria-hidden="true" style="position: absolute; left: 50%; top: 6px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #3F4247"></div>
+<video muted playsinline preload="auto" src="./assets/cc1d9069146e0babea6fcc861807870f.mp4" aria-label="Audit Trail screen recording" style="width: 852px; height: 482px; object-fit: cover; display: block; border-radius: 3px; background: #F4F6F5"></video>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 121px; top: 662px; transform: translateX(-165px) scale(.82); transform-origin: 519px -260px; width: 1038px; height: 16px; background: linear-gradient(#EEEFF1 0%, #CFD1D5 45%, #A9ACB1 100%); border-radius: 2px 2px 14px 14px / 2px 2px 10px 10px">
+<div style="position: absolute; left: 50%; top: 0; width: 135px; height: 6px; margin-left: -67px; background: linear-gradient(#B8BBC0, #D7D9DC); border-radius: 0 0 8px 8px"></div>
+</div>
+<div style="position: absolute; left: 928px; top: 170px; width: 300px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px"><span style="font-family: 'Caladea', 'Cambria', sans-serif; font-size: 28px; font-weight: 700; color: #0B5C3B">Tools used</span><div style="display: flex; flex-direction: column; gap: 8px"><img src="./assets/0967913b091116e01271847c15dc1cb3.png" alt="Exasol" style="width: 172px; height: 42px; display: block"><span style="font-size: 21px; color: #5E7A6C">Server · MCP · Agents</span></div><img src="./assets/7de09f04df11c183b47ef23bf31d581a.png" alt="AWS" style="width: 112px; height: 67px; display: block"></div>
+<img src="./assets/47d6ae4ffe5f890c7769a7bf21c74acf.svg" alt="ElevenLabs" style="position: absolute; left: 1066px; top: 60px; width: 154px; height: 20px; display: block">
+</div>
+</div></section>
+<section class="slide" data-n="16" aria-label="Slide 16"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C">
+<div style="position: absolute; left: 57.6px; top: 38.4px; width: 1084.8px; height: 86.4px; box-sizing: border-box"><div style="position: absolute; inset: 0; box-sizing: border-box; padding: 0.0px 0.0px 0.0px 0.0px; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; overflow-wrap: break-word"><p style="margin: 0; text-align: left; padding-left: 0.0px; text-indent: 0.0px"><span style="font-size: 45.33px; font-weight: 700; font-family: Caladea, Cambria, sans-serif; color: rgb(11, 92, 59)">Thank You</span></p></div></div>
+<div aria-hidden="true" style="position: absolute; left: 81px; top: 666px; width: 958px; height: 26px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(16,38,28,0.22) 0%, rgba(16,38,28,0) 70%)"></div>
+<div style="position: absolute; left: 120px; top: 142px; width: 880px; height: 520px; box-sizing: border-box; padding: 16px 14px 22px; background: linear-gradient(#2A2B2E, #17181A); border-radius: 20px 20px 6px 6px; box-shadow: inset 0 0 0 1.5px #3A3B3F">
+<div aria-hidden="true" style="position: absolute; left: 50%; top: 6px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #3F4247"></div>
+<video muted playsinline preload="auto" src="./assets/aa7b957850a436c136e5698039d89669.mp4" aria-label="Website screen recording" style="width: 852px; height: 482px; object-fit: cover; display: block; border-radius: 3px; background: #F4F6F5"></video>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 41px; top: 662px; width: 1038px; height: 16px; background: linear-gradient(#EEEFF1 0%, #CFD1D5 45%, #A9ACB1 100%); border-radius: 2px 2px 14px 14px / 2px 2px 10px 10px">
+<div style="position: absolute; left: 50%; top: 0; width: 135px; height: 6px; margin-left: -67px; background: linear-gradient(#B8BBC0, #D7D9DC); border-radius: 0 0 8px 8px"></div>
+</div>
+<div style="position: absolute; left: 935px; top: 222px; width: 214px; height: 456px; box-sizing: border-box; padding: 9px; background: #111214; border-radius: 40px; box-shadow: inset 0 0 0 1.5px #3A3B3F, 0 20px 34px -12px rgba(16,38,28,0.35)">
+<div role="img" aria-label="Mobile app start screen: Adverse drug reaction? Start to report" style="position: relative; width: 196px; height: 438px; border-radius: 31px; overflow: hidden">
+<img src="./assets/82f6e1970a09d1626044e18430ebf185.png" alt="" style="width: 196px; height: 438px; object-fit: cover; object-position: center top; display: block">
+<img class="cap-clear" src="./assets/47edffad412d886304db4b04115b91b1.png" alt="" style="position: absolute; left: 23.04px; top: 104.65px; width: 72.31px; height: 84.66px; display: block">
+<img class="cap-grains" src="./assets/9863901ca28f1ce642d822cf9636eb09.png" alt="" style="position: absolute; left: 64.2px; top: 158.15px; width: 67.9px; height: 44.39px; display: block">
+<img class="cap-green" src="./assets/cc605047852f63b29dfbc6651f2bb0ee.png" alt="" style="position: absolute; left: 82.13px; top: 66.14px; width: 94.07px; height: 82.6px; display: block">
+</div>
+<div aria-hidden="true" style="position: absolute; left: 50%; top: 17px; width: 66px; height: 18px; margin-left: -33px; border-radius: 10px; background: #111214"></div>
+</div>
+<img src="./assets/47d6ae4ffe5f890c7769a7bf21c74acf.svg" alt="ElevenLabs" style="position: absolute; left: 1066px; top: 60px; width: 154px; height: 20px; display: block">
+</div>
+</div></section>
+<section class="slide" data-n="17" aria-label="Slide 17"><div class="frame">
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; box-sizing: border-box; padding: 54px 58px 60px; background: #FFFFFF; font-family: 'Carlito', 'Calibri', sans-serif; color: #10261C; display: flex; flex-direction: column; gap: 32px">
+<h1 style="margin: 0; font-size: 45.33px; font-weight: 700; line-height: 1.2; font-family: 'Caladea', 'Cambria', sans-serif; color: #0B5C3B">How it works</h1>
+<div style="flex-grow: 1; display: flex; align-items: stretch; gap: 14px">
+
+<div style="flex: 1 1 0; box-sizing: border-box; background: #FFFFFF; border: 1.33px solid #D3EFE0; border-radius: 22px; padding: 30px 28px; filter: drop-shadow(0px 2.67px 6.67px rgba(11,92,59,0.14)); display: flex; flex-direction: column; gap: 14px">
+<span style="font-size: 20px; font-weight: 700; letter-spacing: 2px; color: #16A05A">1 · REPORT</span>
+<span style="font-family: 'Caladea', 'Cambria', sans-serif; font-size: 38px; font-weight: 700; line-height: 1.15; color: #0B5C3B">SafeReport</span>
+<span style="font-size: 25px; line-height: 1.3; color: #10261C">A patient or doctor reports a side effect.</span>
+<span style="font-size: 23px; line-height: 1.35; color: #5E7A6C">Photo of the pack, chat or voice. AI fills the form; the reporter checks it.</span>
+</div>
+
+<div aria-hidden="true" style="flex: 0 0 44px; display: flex; align-items: center; justify-content: center">
+<svg width="44" height="24" viewBox="0 0 44 24" fill="none" stroke="#16A05A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h38"></path><path d="M30 3l10 9-10 9"></path></svg>
+</div>
+
+<div style="flex: 1 1 0; box-sizing: border-box; background: #0B5C3B; border: 1.33px solid #0B5C3B; border-radius: 22px; padding: 30px 28px; filter: drop-shadow(0px 2.67px 6.67px rgba(11,92,59,0.14)); display: flex; flex-direction: column; gap: 14px">
+<span style="font-size: 20px; font-weight: 700; letter-spacing: 2px; color: #D3EFE0">2 · STORE AND ANALYSE</span>
+<span style="font-family: 'Caladea', 'Cambria', sans-serif; font-size: 38px; font-weight: 700; line-height: 1.15; color: #FFFFFF">Exasol</span>
+<span style="font-size: 25px; line-height: 1.3; color: #FFFFFF">One database holds every report.</span>
+<span style="font-size: 23px; line-height: 1.35; color: #D3EFE0">Reports, audit trail and signal statistics, computed as SQL inside the database.</span>
+</div>
+
+<div aria-hidden="true" style="flex: 0 0 44px; display: flex; align-items: center; justify-content: center">
+<svg width="44" height="24" viewBox="0 0 44 24" fill="none" stroke="#16A05A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h38"></path><path d="M30 3l10 9-10 9"></path></svg>
+</div>
+
+<div style="flex: 1 1 0; box-sizing: border-box; background: #FFFFFF; border: 1.33px solid #D3EFE0; border-radius: 22px; padding: 30px 28px; filter: drop-shadow(0px 2.67px 6.67px rgba(11,92,59,0.14)); display: flex; flex-direction: column; gap: 14px">
+<span style="font-size: 20px; font-weight: 700; letter-spacing: 2px; color: #16A05A">3 · REVIEW</span>
+<span style="font-family: 'Caladea', 'Cambria', sans-serif; font-size: 38px; font-weight: 700; line-height: 1.15; color: #0B5C3B">Atheria</span>
+<span style="font-size: 25px; line-height: 1.3; color: #10261C">The safety team reviews and signs off.</span>
+<span style="font-size: 23px; line-height: 1.35; color: #5E7A6C">Triage, MedDRA coding, signal detection and a full audit trail.</span>
+</div>
+
+</div>
+<p style="margin: 0; text-align: center; font-family: 'Caladea', 'Cambria', sans-serif; font-size: 30px; font-weight: 700; color: #0B5C3B">AI proposes. Fixed rules decide. A human approves.</p>
+<div style="position: absolute; left: 1171.2px; top: 672.0px; width: 52.8px; height: 28.8px; box-sizing: border-box; padding: 4.8px 9.6px"><p style="margin: 0; text-align: right; line-height: 1.2"><span style="font-size: 24.0px; font-family: 'Carlito', 'Calibri', sans-serif">17</span></p></div>
+</div>
+</div></section>
+</div>
+<div id="pill">PAUSED &middot; press Space to continue</div>
+<div id="hint">Next: &rarr; / Page Down / clicker &nbsp;&middot;&nbsp; Back: &larr; &nbsp;&middot;&nbsp; Pause or play video: Space or click the video &nbsp;&middot;&nbsp; Full screen: F</div>
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var stage = document.getElementById('stage'), pill = document.getElementById('pill'), hint = document.getElementById('hint');
+  var cur = -1;
+
+  function fit() {
+    var s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    stage.style.transform = 'translate(' + (-640 * s) + 'px,' + (-360 * s) + 'px) scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit); fit();
+
+  function vid(i) { return slides[i] ? slides[i].querySelector('video') : null; }
+  function syncPill() {
+    var v = vid(cur);
+    pill.classList.toggle('show', !!(v && v.paused && v.currentTime > 0 && !v.ended));
+  }
+
+  function show(i) {
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    if (i === cur) return;
+    var old = vid(cur);
+    if (old) { old.pause(); }
+    if (slides[cur]) slides[cur].classList.remove('on');
+    cur = i;
+    slides[cur].classList.add('on');
+    var v = vid(cur);
+    if (v) { try { v.currentTime = 0; } catch (e) {} var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+    syncPill();
+    try { history.replaceState(null, '', '#' + (cur + 1)); } catch (e) {}
+  }
+
+  function toggle() {
+    var v = vid(cur);
+    if (!v) return false;
+    if (v.paused) { v.play(); } else { v.pause(); }
+    setTimeout(syncPill, 30);
+    return true;
+  }
+
+  slides.forEach(function (s) {
+    var v = s.querySelector('video');
+    if (v) {
+      v.addEventListener('pause', syncPill); v.addEventListener('play', syncPill); v.addEventListener('ended', syncPill);
+      v.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
+    }
+  });
+
+  function hideHint() { hint.classList.add('hide'); }
+  setTimeout(hideHint, 7000);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key, used = true;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === 'ArrowDown' || k === 'Enter') show(cur + 1);
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'ArrowUp' || k === 'Backspace') show(cur - 1);
+    else if (k === ' ' || k === 'Spacebar') { if (!toggle()) show(cur + 1); }
+    else if (k === 'Home') show(0);
+    else if (k === 'End') show(slides.length - 1);
+    else if (k === 'f' || k === 'F') {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen();
+    } else used = false;
+    if (used) { e.preventDefault(); hideHint(); }
+  });
+
+  var idleT;
+  document.addEventListener('mousemove', function () {
+    document.body.classList.remove('idle'); clearTimeout(idleT);
+    idleT = setTimeout(function () { document.body.classList.add('idle'); }, 2500);
+  });
+
+  var start = parseInt((location.hash || '').slice(1), 10);
+  show(isNaN(start) ? 0 : start - 1);
+})();
+</script>
+</body>
+</html>

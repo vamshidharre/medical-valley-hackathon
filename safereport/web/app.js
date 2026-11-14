@@ -563,11 +563,32 @@ function updatePV() {
     : PV.status === 'blocked' ? 'Microphone access is blocked. Allow it in the browser, or type instead.'
     : S.busy ? 'Thinking…' : PV.on ? 'Listening… say your answer' : 'Tap the mic and say your answer';
 }
-function speakPatient(text) {
-  if (!PV.tts || !PV.spoken || !('speechSynthesis' in window)) return;
-  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = 1.02; speechSynthesis.speak(u); } catch { /* ignore */ }
+/* AI voice: ElevenLabs through the server's /api/tts. If the server has no ElevenLabs key (503) or the call
+   fails, the browser's own voice speaks instead. */
+let ttsAudio = null, elevenOff = false;
+function stopSpeech() { try { ttsAudio?.pause(); } catch { /* ignore */ } ttsAudio = null; try { speechSynthesis.cancel(); } catch { /* ignore */ } }
+async function sayText(text, done = () => {}) {
+  stopSpeech();
+  if (!elevenOff) {
+    try {
+      const r = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+      if (r.status === 503) elevenOff = true;
+      if (!r.ok) throw 0;
+      const a = ttsAudio = new Audio(URL.createObjectURL(await r.blob()));
+      a.onended = done;
+      await a.play();
+      return;
+    } catch { ttsAudio = null; }
+  }
+  if (!('speechSynthesis' in window)) return done();
+  const u = new SpeechSynthesisUtterance(text); u.rate = 1.02; u.onend = done; u.onerror = done;
+  speechSynthesis.speak(u);
 }
-function stopPV() { PV.on = false; try { PV.rec?.abort(); } catch { /* ignore */ } try { speechSynthesis.cancel(); } catch { /* ignore */ } }
+function speakPatient(text) {
+  if (!PV.tts || !PV.spoken) return;
+  sayText(text);
+}
+function stopPV() { PV.on = false; try { PV.rec?.abort(); } catch { /* ignore */ } stopSpeech(); }
 const V = { rec: null, on: false, pending: [], interim: '', timer: null, busy: false, tts: true, speaking: false, lastQ: 0, status: '' };
 
 function chatHCP() {
@@ -637,7 +658,7 @@ function startVoice() {
   updateVoiceUI();
 }
 function stopVoice() { V.on = false; try { V.rec?.stop(); } catch { /* ignore */ } clearTimeout(V.timer); updateVoiceUI(); if (V.pending.length) flush(false); }
-function haltVoice() { stopPV(); V.on = false; try { V.rec?.abort(); } catch { /* ignore */ } clearTimeout(V.timer); try { speechSynthesis.cancel(); } catch { /* ignore */ } V.speaking = false; V.pending = []; V.interim = ''; }
+function haltVoice() { stopPV(); V.on = false; try { V.rec?.abort(); } catch { /* ignore */ } clearTimeout(V.timer); stopSpeech(); V.speaking = false; V.pending = []; V.interim = ''; }
 function addSegment(t) { V.pending.push(t); V.interim = ''; schedule(); if (V.pending.length >= 4) flush(false); }
 function schedule() { clearTimeout(V.timer); V.timer = setTimeout(() => flush(true), 3200); }   // a pause = time to label and maybe ask
 
@@ -672,13 +693,10 @@ function applyListen(res) {
   if (V.pending.length) schedule();
 }
 function speak(text) {
-  if (!V.tts || !('speechSynthesis' in window)) return;
-  const u = new SpeechSynthesisUtterance(text); u.rate = 1.02;
+  if (!V.tts) return;
   V.speaking = true; try { V.rec?.stop(); } catch { /* ignore */ }   // don't transcribe the AI's own voice
   updateVoiceUI();
-  const done = () => { V.speaking = false; if (V.on) { try { V.rec.start(); } catch { /* ignore */ } } updateVoiceUI(); };
-  u.onend = done; u.onerror = done;
-  speechSynthesis.speak(u);
+  sayText(text, () => { V.speaking = false; if (V.on) { try { V.rec.start(); } catch { /* ignore */ } } updateVoiceUI(); });
 }
 /* offline fallback: questions -> HCP, everything else -> patient */
 function localListen(segs, ask) {
@@ -1078,7 +1096,7 @@ const actions = {
   'back-chat': () => go('chat'),
   togglecap: () => { S.capOpen = !S.capOpen; renderCap(); },
   mic: () => (V.on ? stopVoice() : startVoice()),
-  pvtts: () => { PV.tts = !PV.tts; if (!PV.tts) try { speechSynthesis.cancel(); } catch { /* ignore */ } updatePV(); },
+  pvtts: () => { PV.tts = !PV.tts; if (!PV.tts) stopSpeech(); updatePV(); },
   pvtype: t => { const f = $('#form'); f.hidden = !f.hidden; t.setAttribute('aria-expanded', !f.hidden); if (!f.hidden) $('#msgIn').focus(); },
   pvmic: () => {
     const SR = getSR(); if (!SR) { $('#form').hidden = false; updatePV(); return; }
@@ -1095,7 +1113,7 @@ const actions = {
     r.onend = () => { PV.on = false; updatePV(); };
     PV.on = true; try { r.start(); } catch { PV.on = false; } updatePV();
   },
-  vtts: () => { V.tts = !V.tts; if (!V.tts) try { speechSynthesis.cancel(); } catch { /* ignore */ } updateVoiceUI(); },
+  vtts: () => { V.tts = !V.tts; if (!V.tts) stopSpeech(); updateVoiceUI(); },
   vtype: () => { const f = $('#vform'); f.hidden = !f.hidden; if (!f.hidden) $('#msgIn').focus(); },
   flip: t => { const m = S.msgs[+t.dataset.i]; if (m) { m.who = m.who === 'hcp' ? 'patient' : 'hcp'; renderTranscript(); } },
   speaker: t => { S.speaker = t.dataset.v; syncWho(); renderChips(); $('#msgIn').focus(); },

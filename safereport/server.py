@@ -27,7 +27,7 @@ def _load_dotenv(path: Path):
 
 
 _load_dotenv(HERE / ".env")
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile  # noqa: E402
+from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
@@ -1096,6 +1096,38 @@ def listen(req: ListenReq):
              for t in (r.get("turns") or []) if str(t.get("text", "")).strip()]
     fields = {k: str(v) for k, v in (r.get("fields") or {}).items() if v not in (None, "")}
     return {"turns": turns, "fields": fields, "question": r.get("question") or None, "done": bool(r.get("done"))}
+
+
+# ------------------------------------------------------------------------- voice: ElevenLabs
+# The assistant's spoken questions use an ElevenLabs voice. Without ELEVENLABS_API_KEY in .env this
+# returns 503 and the web app falls back to the browser's own voice.
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
+ELEVENLABS_MODEL = os.getenv("ELEVENLABS_MODEL", "eleven_multilingual_v2")
+_eleven_voice = os.getenv("ELEVENLABS_VOICE_ID", "")
+
+
+class TtsReq(BaseModel):
+    text: str
+
+
+@app.post("/api/tts")
+def tts(req: TtsReq):
+    global _eleven_voice
+    if not ELEVENLABS_API_KEY:
+        raise HTTPException(503, "ELEVENLABS_API_KEY is not set in safereport/.env")
+    import requests
+    headers = {"xi-api-key": ELEVENLABS_API_KEY}
+    try:
+        if not _eleven_voice:  # no voice chosen: use the first one in the account
+            v = requests.get("https://api.elevenlabs.io/v1/voices", headers=headers, timeout=15)
+            v.raise_for_status()
+            _eleven_voice = v.json()["voices"][0]["voice_id"]
+        r = requests.post(f"https://api.elevenlabs.io/v1/text-to-speech/{_eleven_voice}", headers=headers,
+                          json={"text": req.text[:600], "model_id": ELEVENLABS_MODEL}, timeout=30)
+        r.raise_for_status()
+    except Exception as e:
+        raise HTTPException(502, f"ElevenLabs error: {e}")
+    return Response(r.content, media_type="audio/mpeg")
 
 
 # --------------------------------------------------------------------------- Atheria: Exasol
